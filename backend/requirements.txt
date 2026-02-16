@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+httpx
+python-dotenv
+feedparser
+beautifulsoup4
+sqlalchemy
+aiosqlite
+openai
