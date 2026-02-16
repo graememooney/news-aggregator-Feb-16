@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local env files (NEVER COMMIT)
+.env
+backend/.env
+
+# Databases / local data
+*.db
+
+# Node / frontend (later)
+node_modules/
+.next/
