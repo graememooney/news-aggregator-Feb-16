@@ -1,15 +1,20 @@
-# Python
-__pycache__/
-*.pyc
-.venv/
-
-# Local env files (NEVER COMMIT)
+# Secrets / local env
+**/.env
 .env
-backend/.env
+.env.*
 
-# Databases / local data
-*.db
+# Python virtualenvs
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
 
-# Node / frontend (later)
-node_modules/
-.next/
+# Local databases / caches
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+
+# Node
+**/node_modules/
+**/.next/
+**/dist/
