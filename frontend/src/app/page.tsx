@@ -29,6 +29,19 @@ type Article = {
   source_category_primary?: string | null;
 };
 
+type Cluster = {
+  cluster_id: string;
+  topic: string;
+  duplicates_count: number;
+  sources_count: number;
+  sources: {
+    source: string;
+    link: string;
+    published_utc?: string;
+  }[];
+  best_item: Article;
+};
+
 type CountryOption = {
   key: "all" | "mp" | "uy" | "ar" | "br" | "py" | "bo";
   code: string;
@@ -37,6 +50,7 @@ type CountryOption = {
 };
 
 type SortMode = "smart" | "newest" | "duplicates";
+type FeedMode = "top" | "headlines";
 
 const MERCOSUR_COUNTRIES: CountryOption[] = [
   { key: "all", code: "ALL", name: "All Mercosur", flag_url: "" },
@@ -114,6 +128,12 @@ function limitForRangeAndCountry(range: string, country: CountryOption["key"]) {
   }
 }
 
+// Top Stories should feel curated
+function topLimitForCountry(country: CountryOption["key"]) {
+  if (country === "all") return 30;
+  return 25;
+}
+
 function applyTheme(theme: "dark" | "light") {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
@@ -181,7 +201,11 @@ function isLaDiaria(link: string) {
 }
 
 export default function Home() {
+  const [feedMode, setFeedMode] = useState<FeedMode>("top");
+
   const [articles, setArticles] = useState<Article[]>([]);
+  const [clusters, setClusters] = useState<Cluster[]>([]);
+
   const [query, setQuery] = useState("");
   const [range, setRange] = useState("24h");
   const [country, setCountry] = useState<CountryOption["key"]>("uy");
@@ -209,14 +233,23 @@ export default function Home() {
   const failedLogosRef = useRef<Set<string>>(new Set());
   const [, forceRerender] = useState(0);
 
+  const expandedClustersRef = useRef<Set<string>>(new Set());
+  const [, forceClusterRerender] = useState(0);
+
   const normalizedQuery = useMemo(() => query.trim().toLowerCase(), [query]);
 
   const topicsInData = useMemo(() => {
     const s = new Set<string>();
-    for (const a of articles) s.add(normalizeTopic(a.topic));
+
+    if (feedMode === "top") {
+      for (const c of clusters) s.add(normalizeTopic(c.best_item.topic || c.topic));
+    } else {
+      for (const a of articles) s.add(normalizeTopic(a.topic));
+    }
+
     if (!s.size) s.add(UNCATEGORIZED);
     return s;
-  }, [articles]);
+  }, [articles, clusters, feedMode]);
 
   const categoryOptions = useMemo(() => {
     return CATEGORY_ORDER;
@@ -228,50 +261,184 @@ export default function Home() {
     }
   }, [topicsInData, category]);
 
-  const filteredArticles = useMemo(() => {
-    let list = articles;
+  function openTranslated(link: string) {
+    const target = isLaDiaria(link)
+      ? `${window.location.origin}/api/reader?url=${encodeURIComponent(link)}`
+      : link;
 
-    if (category !== "all") {
-      list = list.filter((a) => normalizeTopic(a.topic) === category);
-    }
+    const encoded = encodeURIComponent(target);
+    window.open(`https://translate.google.com/translate?sl=auto&tl=en&u=${encoded}`, "_blank");
+  }
 
-    if (!normalizedQuery) return list;
+  async function loadHeadlines(selectedRange = range, selectedCountry = country) {
+    setLoading(true);
 
-    return list.filter((a) => {
-      return (
-        includesQuery(a.title_en, normalizedQuery) ||
-        includesQuery(a.summary_en, normalizedQuery) ||
-        includesQuery(a.title, normalizedQuery) ||
-        includesQuery(a.snippet_text, normalizedQuery) ||
-        includesQuery(a.source, normalizedQuery)
+    const limit = limitForRangeAndCountry(selectedRange, selectedCountry);
+
+    const res = await fetch(
+      `/api/news?country=${encodeURIComponent(selectedCountry)}&range=${encodeURIComponent(
+        selectedRange
+      )}&q=&limit=${encodeURIComponent(String(limit))}`,
+      { cache: "no-store" }
+    );
+
+    const data = await safeJson(res);
+    const list: Article[] = (data?.articles || []) as Article[];
+
+    setArticles(list);
+
+    queuedRef.current.clear();
+    queueRef.current = [];
+
+    setLoading(false);
+  }
+
+  async function loadTopStories(selectedRange = range, selectedCountry = country) {
+    setLoading(true);
+
+    const limit = topLimitForCountry(selectedCountry);
+
+    const res = await fetch(
+      `/api/top?country=${encodeURIComponent(selectedCountry)}&range=${encodeURIComponent(
+        selectedRange
+      )}&q=&limit=${encodeURIComponent(String(limit))}`,
+      { cache: "no-store" }
+    );
+
+    const data = await safeJson(res);
+    const list: Cluster[] = (data?.clusters || []) as Cluster[];
+
+    setClusters(list);
+
+    queuedRef.current.clear();
+    queueRef.current = [];
+
+    setLoading(false);
+  }
+
+  async function loadCurrent(selectedRange = range, selectedCountry = country, selectedMode = feedMode) {
+    if (selectedMode === "top") return loadTopStories(selectedRange, selectedCountry);
+    return loadHeadlines(selectedRange, selectedCountry);
+  }
+
+  function currentArticlesForEnrichLookup(): Article[] {
+    if (feedMode === "top") return clusters.map((c) => c.best_item);
+    return articles;
+  }
+
+  function applyEnrichedToState(link: string, title_en: string, summary_en: string) {
+    if (feedMode === "top") {
+      setClusters((prev) =>
+        prev.map((c) => {
+          if (c.best_item.link !== link) return c;
+          return { ...c, best_item: { ...c.best_item, title_en, summary_en } };
+        })
       );
-    });
-  }, [articles, normalizedQuery, category]);
-
-  const displayedArticles = useMemo(() => {
-    if (sortMode === "smart") return filteredArticles;
-
-    const copy = [...filteredArticles];
-
-    if (sortMode === "newest") {
-      copy.sort((a, b) => toEpochMs(b) - toEpochMs(a));
-      return copy;
+      return;
     }
 
-    copy.sort((a, b) => {
-      const da = Number(a.duplicates_count || 1);
-      const db = Number(b.duplicates_count || 1);
-      if (db !== da) return db - da;
-      return toEpochMs(b) - toEpochMs(a);
+    setArticles((prev) =>
+      prev.map((a) => {
+        if (a.link !== link) return a;
+        return { ...a, title_en, summary_en };
+      })
+    );
+  }
+
+  async function enrichBatch(links: string[]) {
+    if (links.length === 0) return;
+
+    const lookup = new Map(currentArticlesForEnrichLookup().map((a) => [a.link, a]));
+    const batch = links
+      .map((l) => lookup.get(l))
+      .filter(Boolean)
+      .map((a) => ({
+        title: a!.title,
+        link: a!.link,
+        source: a!.source,
+        snippet: a!.snippet_text,
+      }));
+
+    if (batch.length === 0) return;
+
+    const res = await fetch("/api/enrich", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items: batch }),
+      cache: "no-store",
     });
 
-    return copy;
-  }, [filteredArticles, sortMode]);
+    const data = await safeJson(res);
+    const enriched = (data?.items || data?.backend_response?.items || []) as any[];
 
-  const missingCount = useMemo(
-    () => displayedArticles.filter((a) => !a.title_en || !a.summary_en).length,
-    [displayedArticles]
-  );
+    for (const e of enriched) {
+      const link = (e?.link || "").trim();
+      if (!link) continue;
+      applyEnrichedToState(link, e.title_en || "", e.summary_en || "");
+    }
+  }
+
+  async function pumpQueue() {
+    if (inflightRef.current || queueRef.current.length === 0) return;
+
+    inflightRef.current = true;
+    setEnriching(true);
+
+    try {
+      const next = queueRef.current.splice(0, ENRICH_BATCH_SIZE);
+      await enrichBatch(next);
+    } finally {
+      inflightRef.current = false;
+      setEnriching(false);
+
+      if (queueRef.current.length > 0) {
+        setTimeout(pumpQueue, 50);
+      }
+    }
+  }
+
+  // Initial load (default to Top Stories)
+  useEffect(() => {
+    loadTopStories("24h", "uy");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // IntersectionObserver for enrichment (works for both modes)
+  useEffect(() => {
+    const list = feedMode === "top" ? clusters.map((c) => c.best_item) : articles;
+    if (list.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let added = false;
+
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+
+          const link = (entry.target as HTMLElement).dataset.link;
+          if (!link) continue;
+
+          const article = list.find((a) => a.link === link);
+          if (!article) continue;
+
+          if (article.title_en && article.summary_en) continue;
+
+          if (!queuedRef.current.has(link)) {
+            queuedRef.current.add(link);
+            queueRef.current.push(link);
+            added = true;
+          }
+        }
+
+        if (added) pumpQueue();
+      },
+      { rootMargin: OBSERVER_ROOT_MARGIN }
+    );
+
+    Object.values(cardRefs.current).forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedMode, clusters, articles]);
 
   useEffect(() => {
     setMounted(true);
@@ -343,131 +510,78 @@ export default function Home() {
     } catch {}
   }, [category, mounted]);
 
-  function openTranslated(link: string) {
-    const target = isLaDiaria(link)
-      ? `${window.location.origin}/api/reader?url=${encodeURIComponent(link)}`
-      : link;
+  const filteredArticles = useMemo(() => {
+    let list = articles;
 
-    const encoded = encodeURIComponent(target);
-    window.open(`https://translate.google.com/translate?sl=auto&tl=en&u=${encoded}`, "_blank");
-  }
+    if (category !== "all") {
+      list = list.filter((a) => normalizeTopic(a.topic) === category);
+    }
 
-  async function loadNews(selectedRange = range, selectedCountry = country) {
-    setLoading(true);
+    if (!normalizedQuery) return list;
 
-    const limit = limitForRangeAndCountry(selectedRange, selectedCountry);
+    return list.filter((a) => {
+      return (
+        includesQuery(a.title_en, normalizedQuery) ||
+        includesQuery(a.summary_en, normalizedQuery) ||
+        includesQuery(a.title, normalizedQuery) ||
+        includesQuery(a.snippet_text, normalizedQuery) ||
+        includesQuery(a.source, normalizedQuery)
+      );
+    });
+  }, [articles, normalizedQuery, category]);
 
-    const res = await fetch(
-      `/api/news?country=${encodeURIComponent(selectedCountry)}&range=${encodeURIComponent(
-        selectedRange
-      )}&q=&limit=${encodeURIComponent(String(limit))}`,
-      { cache: "no-store" }
-    );
+  const displayedArticles = useMemo(() => {
+    if (sortMode === "smart") return filteredArticles;
 
-    const data = await safeJson(res);
-    const list: Article[] = (data?.articles || []) as Article[];
+    const copy = [...filteredArticles];
 
-    setArticles(list);
+    if (sortMode === "newest") {
+      copy.sort((a, b) => toEpochMs(b) - toEpochMs(a));
+      return copy;
+    }
 
-    queuedRef.current.clear();
-    queueRef.current = [];
-
-    setLoading(false);
-  }
-
-  async function enrichBatch(links: string[]) {
-    if (links.length === 0) return;
-
-    const lookup = new Map(articles.map((a) => [a.link, a]));
-    const batch = links
-      .map((l) => lookup.get(l))
-      .filter(Boolean)
-      .map((a) => ({
-        title: a!.title,
-        link: a!.link,
-        source: a!.source,
-        snippet: a!.snippet_text,
-      }));
-
-    if (batch.length === 0) return;
-
-    const res = await fetch("/api/enrich", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: batch }),
-      cache: "no-store",
+    copy.sort((a, b) => {
+      const da = Number(a.duplicates_count || 1);
+      const db = Number(b.duplicates_count || 1);
+      if (db !== da) return db - da;
+      return toEpochMs(b) - toEpochMs(a);
     });
 
-    const data = await safeJson(res);
-    const enriched = (data?.items || data?.backend_response?.items || []) as any[];
+    return copy;
+  }, [filteredArticles, sortMode]);
 
-    setArticles((prev) =>
-      prev.map((a) => {
-        const hit = enriched.find((e: any) => e.link === a.link);
-        if (!hit) return a;
-        return { ...a, title_en: hit.title_en, summary_en: hit.summary_en };
-      })
-    );
-  }
+  const filteredClusters = useMemo(() => {
+    let list = clusters;
 
-  async function pumpQueue() {
-    if (inflightRef.current || queueRef.current.length === 0) return;
-
-    inflightRef.current = true;
-    setEnriching(true);
-
-    try {
-      const next = queueRef.current.splice(0, ENRICH_BATCH_SIZE);
-      await enrichBatch(next);
-    } finally {
-      inflightRef.current = false;
-      setEnriching(false);
-
-      if (queueRef.current.length > 0) {
-        setTimeout(pumpQueue, 50);
-      }
+    if (category !== "all") {
+      list = list.filter((c) => normalizeTopic(c.best_item.topic || c.topic) === category);
     }
-  }
 
-  useEffect(() => {
-    loadNews("24h", "uy");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!normalizedQuery) return list;
 
-  useEffect(() => {
-    if (displayedArticles.length === 0) return;
+    return list.filter((c) => {
+      const a = c.best_item;
+      const hay = [
+        a.title_en,
+        a.summary_en,
+        a.title,
+        a.snippet_text,
+        a.source,
+        c.topic,
+        (c.sources || []).map((s) => s.source).join(" "),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        let added = false;
+      return hay.includes(normalizedQuery);
+    });
+  }, [clusters, normalizedQuery, category]);
 
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-
-          const link = (entry.target as HTMLElement).dataset.link;
-          if (!link) continue;
-
-          const article = articles.find((a) => a.link === link);
-          if (!article) continue;
-
-          if (article.title_en && article.summary_en) continue;
-
-          if (!queuedRef.current.has(link)) {
-            queuedRef.current.add(link);
-            queueRef.current.push(link);
-            added = true;
-          }
-        }
-
-        if (added) pumpQueue();
-      },
-      { rootMargin: OBSERVER_ROOT_MARGIN }
-    );
-
-    Object.values(cardRefs.current).forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayedArticles, articles]);
+  const missingCount = useMemo(() => {
+    const list = feedMode === "top" ? clusters.map((c) => c.best_item) : displayedArticles;
+    return list.filter((a) => !a.title_en || !a.summary_en).length;
+  }, [feedMode, clusters, displayedArticles]);
 
   async function handleInstallClick() {
     if (standalone) return;
@@ -484,9 +598,14 @@ export default function Home() {
   }
 
   const selectedCountryName = MERCOSUR_COUNTRIES.find((c) => c.key === country)?.name || "Uruguay";
-
-  // UI feedback: remove "Updating/Refreshing" text entirely
   const installButtonLabel = installEvent ? "Install" : "Add to Home";
+
+  function toggleClusterExpanded(id: string) {
+    const set = expandedClustersRef.current;
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
+    forceClusterRerender((x) => x + 1);
+  }
 
   return (
     <main className="p-8 max-w-5xl mx-auto">
@@ -519,7 +638,6 @@ export default function Home() {
             </button>
           ) : null}
 
-          {/* UI feedback: make theme button smaller */}
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
             className="inline-flex items-center rounded-full border border-gray-500 px-3 py-1.5 text-xs transition bg-black text-white dark:bg-white dark:text-black hover:opacity-90"
@@ -532,15 +650,34 @@ export default function Home() {
       <hr className="border-gray-200 dark:border-gray-800 mb-10" />
 
       <div className="flex items-baseline justify-between gap-4 mb-6">
-        <h2 className="text-3xl font-bold">{selectedCountryName} News</h2>
+        <h2 className="text-3xl font-bold">
+          {feedMode === "top" ? "Top Stories" : `${selectedCountryName} News`}
+        </h2>
 
-        {/* UI feedback: remove updating/refreshing */}
         <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm whitespace-nowrap">
           {loading ? "" : missingCount > 0 ? "" : ""}
         </span>
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
+        {/* Feed Mode */}
+        <div className="md:col-span-3">
+          <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Feed Mode</label>
+          <select
+            value={feedMode}
+            onChange={(e) => {
+              const val = e.target.value as FeedMode;
+              setFeedMode(val);
+              loadCurrent(range, country, val);
+            }}
+            className="w-full h-10 border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-900 text-black dark:text-white px-3 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
+          >
+            <option value="top">Top Stories</option>
+            <option value="headlines">Headlines</option>
+          </select>
+        </div>
+
+        {/* Date Range */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Date Range</label>
           <select
@@ -548,7 +685,7 @@ export default function Home() {
             onChange={(e) => {
               const val = e.target.value;
               setRange(val);
-              loadNews(val, country);
+              loadCurrent(val, country);
             }}
             className="w-full h-10 border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-900 text-black dark:text-white px-3 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
@@ -559,6 +696,7 @@ export default function Home() {
           </select>
         </div>
 
+        {/* Select Country */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Select Country</label>
           <select
@@ -566,7 +704,7 @@ export default function Home() {
             onChange={(e) => {
               const val = e.target.value as CountryOption["key"];
               setCountry(val);
-              loadNews(range, val);
+              loadCurrent(range, val);
             }}
             className="w-full h-10 border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-900 text-black dark:text-white px-3 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
           >
@@ -578,6 +716,7 @@ export default function Home() {
           </select>
         </div>
 
+        {/* Category */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Category</label>
           <select
@@ -594,11 +733,11 @@ export default function Home() {
           </select>
         </div>
 
-        <div className="md:col-span-3">
+        {/* Search */}
+        <div className="md:col-span-12">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Search</label>
 
           <div className="flex items-center gap-3">
-            {/* UI feedback: one-line placeholder */}
             <input
               className="h-10 w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-black dark:text-white px-3 rounded placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
               placeholder={"Headlines & summaries"}
@@ -616,103 +755,239 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        {/* Sort (Headlines only) */}
+        {feedMode === "headlines" ? (
+          <div className="md:col-span-12">
+            <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Sort</label>
+            <select
+              value={sortMode}
+              onChange={(e) => {
+                const val = e.target.value as SortMode;
+                setSortMode(val);
+                try {
+                  window.localStorage.setItem("sortMode", val);
+                } catch {}
+              }}
+              className="w-full h-10 border border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-900 text-black dark:text-white px-3 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
+            >
+              <option value="smart">Smart</option>
+              <option value="newest">Newest</option>
+              <option value="duplicates">Most Reported</option>
+            </select>
+          </div>
+        ) : null}
       </div>
 
       {loading && <p className="text-gray-600 dark:text-gray-400">Loading…</p>}
 
-      <div className="space-y-6">
-        {displayedArticles.map((a) => {
-          const src = (a.source || "").trim();
-          const logoFailed = failedLogosRef.current.has(src);
-          const showLogo = !!a.source_logo && !logoFailed;
+      {feedMode === "top" ? (
+        <div className="space-y-6">
+          {filteredClusters.map((c) => {
+            const a = c.best_item;
 
-          const titleReady = !!(a.title_en && a.title_en.trim());
-          const summaryReady = !!(a.summary_en && a.summary_en.trim());
+            const src = (a.source || "").trim();
+            const logoFailed = failedLogosRef.current.has(src);
+            const showLogo = !!a.source_logo && !logoFailed;
 
-          const topic = normalizeTopic(a.topic);
+            const titleReady = !!(a.title_en && a.title_en.trim());
+            const summaryReady = !!(a.summary_en && a.summary_en.trim());
 
-          return (
-            <div
-              key={a.link}
-              ref={(el) => {
-                cardRefs.current[a.link] = el;
-              }}
-              data-link={a.link}
-              className="relative border border-gray-200 dark:border-gray-700 rounded p-5 bg-white dark:bg-transparent"
-            >
-              {topic ? (
-                <div className="absolute top-3 right-3">
-                  <span className="text-[11px] px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-white/80">
-                    {topic}
-                  </span>
-                </div>
-              ) : null}
+            const topic = normalizeTopic(a.topic || c.topic);
+            const expanded = expandedClustersRef.current.has(c.cluster_id);
 
-              <div className="flex items-center gap-2 mb-2">
-                {a.country_flag_url ? (
-                  <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" />
+            return (
+              <div
+                key={c.cluster_id}
+                ref={(el) => {
+                  cardRefs.current[a.link] = el;
+                }}
+                data-link={a.link}
+                className="relative border border-gray-200 dark:border-gray-700 rounded p-5 bg-white dark:bg-transparent"
+              >
+                {topic ? (
+                  <div className="absolute top-3 right-3">
+                    <span className="text-[11px] px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-white/80">
+                      {topic}
+                    </span>
+                  </div>
                 ) : null}
 
-                {showLogo ? (
-                  <img
-                    src={a.source_logo as string}
-                    alt={a.source}
-                    className="h-5 w-5 object-contain"
-                    onError={() => {
-                      failedLogosRef.current.add(src);
-                      forceRerender((x) => x + 1);
-                    }}
-                  />
-                ) : (
-                  <span className="inline-flex h-5 min-w-5 px-1 items-center justify-center rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] border border-gray-200 dark:border-gray-700">
-                    {initials(a.source)}
+                <div className="flex items-center gap-2 mb-2">
+                  {a.country_flag_url ? (
+                    <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" />
+                  ) : null}
+
+                  {showLogo ? (
+                    <img
+                      src={a.source_logo as string}
+                      alt={a.source}
+                      className="h-5 w-5 object-contain"
+                      onError={() => {
+                        failedLogosRef.current.add(src);
+                        forceRerender((x) => x + 1);
+                      }}
+                    />
+                  ) : (
+                    <span className="inline-flex h-5 min-w-5 px-1 items-center justify-center rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] border border-gray-200 dark:border-gray-700">
+                      {initials(a.source)}
+                    </span>
+                  )}
+
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
+
+                  <span className="ml-2 text-xs text-gray-600 dark:text-gray-400">
+                    Reported by <span className="font-semibold">{c.sources_count}</span> sources
                   </span>
+                </div>
+
+                {titleReady ? (
+                  <h3 className="font-semibold text-lg">{a.title_en}</h3>
+                ) : (
+                  <div className="mt-1 space-y-2 animate-pulse">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/6" />
+                  </div>
                 )}
 
-                <span className="text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
+                {summaryReady ? (
+                  <p className="mt-2 text-gray-800 dark:text-white/80">{a.summary_en}</p>
+                ) : (
+                  <div className="mt-3 space-y-2 animate-pulse">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
+                  </div>
+                )}
+
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">{formatPublishedUTC(a)}</p>
+
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={() => openTranslated(a.link)}
+                    className="inline-flex items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition bg-black text-white dark:bg-white dark:text-black hover:opacity-90"
+                  >
+                    Open Translated Article →
+                  </button>
+
+                  <button
+                    onClick={() => toggleClusterExpanded(c.cluster_id)}
+                    className="inline-flex items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition bg-transparent text-black dark:text-white hover:opacity-90"
+                  >
+                    {expanded ? "Hide sources" : "View sources"}
+                  </button>
+                </div>
+
+                {expanded ? (
+                  <div className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-4 space-y-2">
+                    {(c.sources || []).slice(0, 12).map((s) => (
+                      <div key={s.link} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-gray-700 dark:text-gray-300">{s.source}</span>
+                        <button
+                          onClick={() => openTranslated(s.link)}
+                          className="text-xs px-3 py-1 rounded border border-gray-300 dark:border-gray-700 hover:opacity-90"
+                        >
+                          Open →
+                        </button>
+                      </div>
+                    ))}
+                    {(c.sources || []).length > 12 ? (
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-2">Showing first 12 sources.</div>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {displayedArticles.map((a) => {
+            const src = (a.source || "").trim();
+            const logoFailed = failedLogosRef.current.has(src);
+            const showLogo = !!a.source_logo && !logoFailed;
 
-              {titleReady ? (
-                <h3 className="font-semibold text-lg">{a.title_en}</h3>
-              ) : (
-                <div className="mt-1 space-y-2 animate-pulse">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/6" />
-                </div>
-              )}
+            const titleReady = !!(a.title_en && a.title_en.trim());
+            const summaryReady = !!(a.summary_en && a.summary_en.trim());
 
-              {summaryReady ? (
-                <p className="mt-2 text-gray-800 dark:text-white/80">{a.summary_en}</p>
-              ) : (
-                <div className="mt-3 space-y-2 animate-pulse">
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
-                </div>
-              )}
+            const topic = normalizeTopic(a.topic);
 
-              {/* UI feedback: remove seconds, display UTC */}
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">{formatPublishedUTC(a)}</p>
-
-              <button
-                onClick={() => openTranslated(a.link)}
-                className="mt-4 inline-flex items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition bg-black text-white dark:bg-white dark:text-black hover:opacity-90"
+            return (
+              <div
+                key={a.link}
+                ref={(el) => {
+                  cardRefs.current[a.link] = el;
+                }}
+                data-link={a.link}
+                className="relative border border-gray-200 dark:border-gray-700 rounded p-5 bg-white dark:bg-transparent"
               >
-                Open Translated Article →
-              </button>
-            </div>
-          );
-        })}
-      </div>
+                {topic ? (
+                  <div className="absolute top-3 right-3">
+                    <span className="text-[11px] px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-white/80">
+                      {topic}
+                    </span>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center gap-2 mb-2">
+                  {a.country_flag_url ? (
+                    <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" />
+                  ) : null}
+
+                  {showLogo ? (
+                    <img
+                      src={a.source_logo as string}
+                      alt={a.source}
+                      className="h-5 w-5 object-contain"
+                      onError={() => {
+                        failedLogosRef.current.add(src);
+                        forceRerender((x) => x + 1);
+                      }}
+                    />
+                  ) : (
+                    <span className="inline-flex h-5 min-w-5 px-1 items-center justify-center rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] border border-gray-200 dark:border-gray-700">
+                      {initials(a.source)}
+                    </span>
+                  )}
+
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
+                </div>
+
+                {titleReady ? (
+                  <h3 className="font-semibold text-lg">{a.title_en}</h3>
+                ) : (
+                  <div className="mt-1 space-y-2 animate-pulse">
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/6" />
+                  </div>
+                )}
+
+                {summaryReady ? (
+                  <p className="mt-2 text-gray-800 dark:text-white/80">{a.summary_en}</p>
+                ) : (
+                  <div className="mt-3 space-y-2 animate-pulse">
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
+                  </div>
+                )}
+
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">{formatPublishedUTC(a)}</p>
+
+                <button
+                  onClick={() => openTranslated(a.link)}
+                  className="mt-4 inline-flex items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition bg-black text-white dark:bg-white dark:text-black hover:opacity-90"
+                >
+                  Open Translated Article →
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Info Modal */}
       {infoOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button
-            className="absolute inset-0 bg-black/60"
-            aria-label="Close"
-            onClick={() => setInfoOpen(false)}
-          />
-          {/* Mobile safe: max height + scroll */}
+          <button className="absolute inset-0 bg-black/60" aria-label="Close" onClick={() => setInfoOpen(false)} />
           <div className="relative w-full max-w-xl max-h-[85vh] overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-black p-5">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -722,7 +997,6 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* UI feedback: replace X with small "Close" */}
               <button
                 onClick={() => setInfoOpen(false)}
                 className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 hover:opacity-90"
@@ -747,6 +1021,9 @@ export default function Home() {
               <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
                 <div className="font-semibold text-gray-900 dark:text-white">How to use</div>
                 <ul className="mt-2 list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-400">
+                  <li>
+                    <span className="text-gray-800 dark:text-white/80">Feed Mode:</span> Top Stories or Headlines.
+                  </li>
                   <li>
                     <span className="text-gray-800 dark:text-white/80">Date Range:</span> filter by recency.
                   </li>
