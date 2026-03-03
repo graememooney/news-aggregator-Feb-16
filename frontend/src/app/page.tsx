@@ -103,7 +103,7 @@ function includesQuery(haystack: string | null | undefined, q: string) {
   return haystack.toLowerCase().includes(q);
 }
 
-// Top Stories should feel curated
+// Curated clustered feed size
 function topLimitForCountry(country: CountryOption["key"]) {
   if (country === "all") return 30;
   return 25;
@@ -165,8 +165,28 @@ function isLaDiaria(link: string) {
   }
 }
 
+function MultiSourceIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className="opacity-90"
+    >
+      <path
+        d="M8 7.5h10.5A2.5 2.5 0 0 1 21 10v10.5A2.5 2.5 0 0 1 18.5 23H8A2.5 2.5 0 0 1 5.5 20.5V10A2.5 2.5 0 0 1 8 7.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M3 14V5.5A2.5 2.5 0 0 1 5.5 3H14" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 export default function Home() {
-  // We always use clustered Top Stories now
+  // Always clustered feed
   const [clusters, setClusters] = useState<Cluster[]>([]);
 
   const [query, setQuery] = useState("");
@@ -308,7 +328,6 @@ export default function Home() {
     }
   }
 
-  // Initial load
   useEffect(() => {
     loadTopStories("24h", "uy");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -361,14 +380,13 @@ export default function Home() {
       setTheme(t);
     } catch {}
 
-    // install context
     try {
       setIos(isIOS());
       setStandalone(isStandalone());
     } catch {}
   }, []);
 
-  // Handle beforeinstallprompt (Chrome/Edge)
+  // beforeinstallprompt
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
@@ -398,7 +416,6 @@ export default function Home() {
     } catch {}
   }, [theme, mounted]);
 
-  // Filtering (category + search)
   const filteredClusters = useMemo(() => {
     let list = clusters;
 
@@ -484,7 +501,6 @@ export default function Home() {
 
       <div className="flex items-baseline justify-between gap-4 mb-6">
         <h2 className="text-3xl font-bold">{selectedCountryName} News</h2>
-
         <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm whitespace-nowrap">
           {loading ? "" : missingCount > 0 ? "" : ""}
         </span>
@@ -551,7 +567,6 @@ export default function Home() {
         {/* Search */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Search</label>
-
           <div className="flex items-center gap-3">
             <input
               className="h-10 w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-black dark:text-white px-3 rounded placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
@@ -586,6 +601,7 @@ export default function Home() {
           const summaryReady = !!(a.summary_en && a.summary_en.trim());
 
           const topic = normalizeTopic(a.topic || c.topic);
+          const multiSource = (c.sources_count || 0) > 1;
 
           return (
             <div
@@ -596,13 +612,23 @@ export default function Home() {
               data-link={a.link}
               className="relative border border-gray-200 dark:border-gray-700 rounded p-5 bg-white dark:bg-transparent"
             >
-              {topic ? (
-                <div className="absolute top-3 right-3">
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                {multiSource ? (
+                  <span
+                    title="Multiple sources"
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-white/80"
+                    aria-label="Multiple sources"
+                  >
+                    <MultiSourceIcon />
+                  </span>
+                ) : null}
+
+                {topic ? (
                   <span className="text-[11px] px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-white/80">
                     {topic}
                   </span>
-                </div>
-              ) : null}
+                ) : null}
+              </div>
 
               <div className="flex items-center gap-2 mb-2">
                 {a.country_flag_url ? (
