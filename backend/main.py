@@ -178,7 +178,7 @@ def _init_db() -> None:
             """
         )
 
-        # NEW: cluster-level enrichment cache (cluster_id -> title_en/summary_en)
+        # cluster-level enrichment cache (cluster_id -> title_en/summary_en)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS cluster_enrich_cache (
@@ -190,7 +190,7 @@ def _init_db() -> None:
             """
         )
 
-        # NEW: cached /top payloads (country+range+q+limit -> payload_json)
+        # cached /top payloads (country+range+q+limit -> payload_json)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS top_cache (
@@ -351,13 +351,26 @@ def _set_cached_enrich(link: str, title_en: str, summary_en: str) -> None:
 
 
 # ----------------------------
-# NEW: cluster enrichment cache helpers
+# Cluster enrichment cache helpers
 # ----------------------------
 def _cluster_enrich_ttl_s() -> int:
     try:
         return int((os.getenv("CLUSTER_ENRICH_TTL_S") or "86400").strip())  # 24h default
     except Exception:
         return 86400
+
+
+def _iso_is_fresh(created_utc: str, ttl_s: int) -> bool:
+    if not created_utc:
+        return False
+    try:
+        dt = datetime.fromisoformat(created_utc)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        age = datetime.now(timezone.utc) - dt.astimezone(timezone.utc)
+        return age.total_seconds() <= float(ttl_s)
+    except Exception:
+        return False
 
 
 def _get_cached_cluster_enrich(cluster_id: str) -> Optional[Dict[str, Any]]:
@@ -372,6 +385,17 @@ def _get_cached_cluster_enrich(cluster_id: str) -> Optional[Dict[str, Any]]:
         if not row:
             return None
         return {"title_en": row["title_en"], "summary_en": row["summary_en"], "created_utc": row["created_utc"]}
+
+
+def _get_fresh_cluster_enrich(cluster_id: str) -> Optional[Dict[str, Any]]:
+    cached = _get_cached_cluster_enrich(cluster_id)
+    if not cached:
+        return None
+    if not cached.get("title_en") or not cached.get("summary_en"):
+        return None
+    if not _iso_is_fresh(cached.get("created_utc") or "", _cluster_enrich_ttl_s()):
+        return None
+    return cached
 
 
 def _set_cached_cluster_enrich(cluster_id: str, title_en: str, summary_en: str) -> None:
@@ -393,21 +417,8 @@ def _set_cached_cluster_enrich(cluster_id: str, title_en: str, summary_en: str) 
         conn.commit()
 
 
-def _iso_is_fresh(created_utc: str, ttl_s: int) -> bool:
-    if not created_utc:
-        return False
-    try:
-        dt = datetime.fromisoformat(created_utc)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        age = datetime.now(timezone.utc) - dt.astimezone(timezone.utc)
-        return age.total_seconds() <= float(ttl_s)
-    except Exception:
-        return False
-
-
 # ----------------------------
-# NEW: /top payload cache (SQLite TTL)
+# /top payload cache (SQLite TTL)
 # ----------------------------
 def _top_ttl_s() -> int:
     try:
@@ -454,7 +465,6 @@ def _top_cache_get(cache_key: str) -> Optional[Tuple[Dict[str, Any], int]]:
     except Exception:
         return None
 
-    # compute age seconds
     try:
         dt = datetime.fromisoformat(created)
         if dt.tzinfo is None:
@@ -489,7 +499,6 @@ def _top_cache_set(cache_key: str, payload: Dict[str, Any]) -> None:
         )
         conn.commit()
 
-        # simple cap: delete oldest rows if too many
         max_rows = _top_cache_max_rows()
         if max_rows > 0:
             count_row = conn.execute("SELECT COUNT(*) AS n FROM top_cache").fetchone()
@@ -509,13 +518,50 @@ def _top_cache_set(cache_key: str, payload: Dict[str, Any]) -> None:
                 conn.commit()
 
 
+def _inject_cluster_cache_into_payload(payload: Dict[str, Any]) -> None:
+    """
+    Critical improvement:
+    Even when /top response comes from SQLite top_cache,
+    we inject fresh cluster_enrich_cache into best_item at return time.
+
+    This makes the UI "instantly English" as soon as cluster cache exists,
+    without waiting for TOP_TTL to expire.
+    """
+    try:
+        clusters = payload.get("clusters") or []
+        if not isinstance(clusters, list):
+            return
+
+        for cobj in clusters:
+            if not isinstance(cobj, dict):
+                continue
+            cid = (cobj.get("cluster_id") or "").strip()
+            if not cid:
+                continue
+            best_item = cobj.get("best_item")
+            if not isinstance(best_item, dict):
+                continue
+
+            # If best_item already has a summary/title, skip
+            if (best_item.get("title_en") and best_item.get("summary_en")):
+                continue
+
+            cached_cluster = _get_fresh_cluster_enrich(cid)
+            if not cached_cluster:
+                continue
+
+            best_item["title_en"] = cached_cluster.get("title_en") or ""
+            best_item["summary_en"] = cached_cluster.get("summary_en") or ""
+            best_item["has_cached_summary"] = True
+    except Exception:
+        return
+
+
 # ----------------------------
 # /news TTL cache (in-memory)
 # ----------------------------
 _NEWS_CACHE_LOCK = threading.Lock()
 _NEWS_CACHE: Dict[str, Dict[str, Any]] = {}
-# entry shape:
-# { "ts": float_epoch, "payload": dict }
 
 
 def _news_ttl_s() -> int:
@@ -1056,8 +1102,8 @@ def _score_category(text: str, rules: Dict[str, Dict[str, float]]) -> Tuple[floa
     return score, matched
 
 
+# Keeping your CATEGORY_RULES exactly (unchanged)
 CATEGORY_RULES: Dict[str, Dict[str, Dict[str, float]]] = {
-    # (keeping your rules exactly)
     "Politics": {
         "strong": {
             "presidente": 4.0,
@@ -1661,7 +1707,7 @@ class EnrichItem(BaseModel):
     link: str
     source: str
     snippet: str = ""
-    # NEW: optional cluster_id (backwards compatible; frontend can add later)
+    # optional cluster_id (frontend can/should send for clustered feeds)
     cluster_id: Optional[str] = None
 
 
@@ -1956,9 +2002,10 @@ def get_clusters(country: str = "uy", range: str = "24h", q: str = "", limit: in
 def get_top(country: str = "uy", range: str = "24h", q: str = "", limit: int = 30):
     """
     Top Stories: cluster-first feed intended for the homepage.
-    NOW includes:
+
+    Includes:
     - SQLite TTL cache for the whole /top response
-    - cluster_enrich_cache read-through (if cluster-level enrichment exists)
+    - cluster_enrich_cache injection (NOW also applies to cached payloads)
     """
     c = (country or "uy").strip().lower()
 
@@ -1973,6 +2020,10 @@ def get_top(country: str = "uy", range: str = "24h", q: str = "", limit: int = 3
     cached = _top_cache_get(cache_key)
     if cached:
         payload, age_s = cached
+
+        # Key improvement: inject cluster cache even when /top payload comes from SQLite cache
+        _inject_cluster_cache_into_payload(payload)
+
         payload["cache_hit"] = True
         payload["cache_age_s"] = age_s
         payload["cache_ttl_s"] = _top_ttl_s()
@@ -2002,13 +2053,12 @@ def get_top(country: str = "uy", range: str = "24h", q: str = "", limit: int = 3
                 if float(it.get("rank_score") or 0.0) > float(best.get("rank_score") or 0.0):
                     best = it
 
-        # Read-through cluster enrichment cache if available (optional)
-        cached_cluster = _get_cached_cluster_enrich(cid)
-        if cached_cluster and cached_cluster.get("title_en") and cached_cluster.get("summary_en"):
-            if _iso_is_fresh(cached_cluster.get("created_utc") or "", _cluster_enrich_ttl_s()):
-                best["title_en"] = cached_cluster.get("title_en") or ""
-                best["summary_en"] = cached_cluster.get("summary_en") or ""
-                best["has_cached_summary"] = True
+        # Read-through cluster enrichment cache if available (fresh only)
+        cached_cluster = _get_fresh_cluster_enrich(cid)
+        if cached_cluster:
+            best["title_en"] = cached_cluster.get("title_en") or ""
+            best["summary_en"] = cached_cluster.get("summary_en") or ""
+            best["has_cached_summary"] = True
 
         seen_sources: Dict[str, Dict[str, Any]] = {}
         for it in items:
@@ -2058,6 +2108,12 @@ def get_top(country: str = "uy", range: str = "24h", q: str = "", limit: int = 3
 
 @app.post("/enrich")
 def enrich_items(req: EnrichRequest, request: Request):
+    """
+    Cluster-aware enrichment:
+    - If cluster_id is provided and fresh cluster cache exists -> return without OpenAI.
+    - Otherwise fall back to link cache.
+    - If OpenAI is used and cluster_id exists -> write cluster cache too.
+    """
     _rate_limit_check(request)
 
     if not req.items:
@@ -2067,18 +2123,49 @@ def enrich_items(req: EnrichRequest, request: Request):
     to_do: List[EnrichItem] = []
 
     for it in req.items:
-        cached = _get_cached_enrich(it.link)
-        if cached and cached.get("summary_en"):
-            cached_out.append(
-                {
-                    "link": it.link,
-                    "title_en": cached.get("title_en") or "",
-                    "summary_en": cached.get("summary_en") or "",
-                    "cached": True,
-                }
-            )
-        else:
-            to_do.append(it)
+        link = (it.link or "").strip()
+        cid = (it.cluster_id or "").strip()
+
+        # 1) Cluster cache fast-path (cheapest + aligns with clusters)
+        if cid:
+            cc = _get_fresh_cluster_enrich(cid)
+            if cc:
+                title_en = cc.get("title_en") or ""
+                summary_en = cc.get("summary_en") or ""
+
+                # Also write link cache (best-effort) so /news items benefit too
+                if link and title_en and summary_en:
+                    try:
+                        _set_cached_enrich(link, title_en, summary_en)
+                    except Exception:
+                        pass
+
+                cached_out.append(
+                    {
+                        "link": link,
+                        "title_en": title_en,
+                        "summary_en": summary_en,
+                        "cached": True,
+                    }
+                )
+                continue
+
+        # 2) Link cache
+        if link:
+            cached = _get_cached_enrich(link)
+            if cached and cached.get("summary_en"):
+                cached_out.append(
+                    {
+                        "link": link,
+                        "title_en": cached.get("title_en") or "",
+                        "summary_en": cached.get("summary_en") or "",
+                        "cached": True,
+                    }
+                )
+                continue
+
+        # 3) Needs OpenAI
+        to_do.append(it)
 
     if not to_do:
         return {"items": cached_out}
@@ -2124,6 +2211,14 @@ def enrich_items(req: EnrichRequest, request: Request):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Enrichment failed: {e}")
 
+    # Build quick lookup for cluster_id by link from request items
+    link_to_cid: Dict[str, str] = {}
+    for it in req.items:
+        lnk = (it.link or "").strip()
+        cid = (it.cluster_id or "").strip()
+        if lnk and cid and lnk not in link_to_cid:
+            link_to_cid[lnk] = cid
+
     out_items = []
     for obj in (data.get("items") or []):
         link = (obj.get("link") or "").strip()
@@ -2135,22 +2230,12 @@ def enrich_items(req: EnrichRequest, request: Request):
         if title_en and summary_en:
             _set_cached_enrich(link, title_en, summary_en)
 
-        # If client provided cluster_id in request payload, write cluster cache too
-        # (backwards compatible: older clients won't send it)
-        # We stored it in "payload" we sent to the model; we can map it back by link.
-        # Safest: only upsert if request included a matching cluster_id for this link.
-        # We'll scan original req items for matching link.
-        if title_en and summary_en:
-            try:
-                cid = ""
-                for it in req.items:
-                    if (it.link or "").strip() == link:
-                        cid = (it.cluster_id or "").strip()
-                        break
-                if cid:
+            cid = link_to_cid.get(link) or ""
+            if cid:
+                try:
                     _set_cached_cluster_enrich(cid, title_en, summary_en)
-            except Exception:
-                pass
+                except Exception:
+                    pass
 
         out_items.append({"link": link, "title_en": title_en, "summary_en": summary_en, "cached": False})
 
@@ -2158,7 +2243,7 @@ def enrich_items(req: EnrichRequest, request: Request):
 
 
 # ----------------------------
-# Background Pre-Enrichment Worker
+# Background Pre-Enrichment Worker (cluster-aware)
 # ----------------------------
 _worker_lock = threading.Lock()
 _worker_running = False
@@ -2177,18 +2262,37 @@ def _env_list(key: str, default_csv: str) -> List[str]:
     return parts
 
 
-def _enrich_internal(items: List[Dict[str, str]]) -> int:
+def _enrich_internal_clusters(items: List[Dict[str, str]]) -> int:
+    """
+    Cluster-aware internal enrichment used by the background worker.
+    - Skips if cluster cache already exists (fresh).
+    - Writes cluster cache + also writes link cache for the best_item link.
+    """
     if not items:
         return 0
 
     todo = []
     for it in items:
+        cid = (it.get("cluster_id") or "").strip()
         link = (it.get("link") or "").strip()
-        if not link:
-            continue
-        cached = _get_cached_enrich(link)
-        if cached and cached.get("summary_en"):
-            continue
+
+        if cid:
+            cc = _get_fresh_cluster_enrich(cid)
+            if cc:
+                # best-effort write link cache too
+                try:
+                    if link and cc.get("title_en") and cc.get("summary_en"):
+                        _set_cached_enrich(link, cc.get("title_en") or "", cc.get("summary_en") or "")
+                except Exception:
+                    pass
+                continue
+
+        # Also skip if link cache already exists (helps if cluster_id missing)
+        if link:
+            cached = _get_cached_enrich(link)
+            if cached and cached.get("summary_en"):
+                continue
+
         todo.append(it)
 
     if not todo:
@@ -2210,13 +2314,20 @@ def _enrich_internal(items: List[Dict[str, str]]) -> int:
     )
 
     payload = []
+    link_to_cid: Dict[str, str] = {}
     for it in todo:
+        link = (it.get("link") or "").strip()
+        cid = (it.get("cluster_id") or "").strip()
+        if link and cid and link not in link_to_cid:
+            link_to_cid[link] = cid
+
         payload.append(
             {
-                "link": (it.get("link") or "").strip(),
+                "link": link,
                 "source": (it.get("source") or "").strip(),
                 "title": (it.get("title") or "").strip(),
                 "snippet": _clean_text_any((it.get("snippet") or "").strip(), max_chars=700),
+                "cluster_id": cid,
             }
         )
 
@@ -2239,9 +2350,22 @@ def _enrich_internal(items: List[Dict[str, str]]) -> int:
         link = (obj.get("link") or "").strip()
         title_en = (obj.get("title_en") or "").strip()
         summary_en = (obj.get("summary_en") or "").strip()
-        if link and title_en and summary_en:
+        if not link or not title_en or not summary_en:
+            continue
+
+        try:
             _set_cached_enrich(link, title_en, summary_en)
-            enriched += 1
+        except Exception:
+            pass
+
+        cid = link_to_cid.get(link) or ""
+        if cid:
+            try:
+                _set_cached_cluster_enrich(cid, title_en, summary_en)
+            except Exception:
+                pass
+
+        enriched += 1
 
     return enriched
 
@@ -2294,6 +2418,7 @@ def _worker_loop() -> None:
             "batch_size": batch_size,
             "enriched_count": 0,
             "buckets": {},
+            "mode": "cluster",
         }
 
         try:
@@ -2312,11 +2437,13 @@ def _worker_loop() -> None:
                     if (c or "").lower() == "all":
                         effective_scan_limit = min(effective_scan_limit, 60)
 
-                    scan_cap = max(150, int(effective_scan_limit) * 8)
+                    scan_cap = max(150, int(effective_scan_limit) * 10)
                     items = _collect_items(country=c, range=r, q="", scan_cap=scan_cap)
                     items = _dedupe(items)
 
+                    # label + rank
                     for a in items:
+                        a["topic"] = _topic_label(a)
                         score, _factors = _rank_score_and_factors(a)
                         a["rank_score"] = score
 
@@ -2325,20 +2452,52 @@ def _worker_loop() -> None:
                         reverse=True,
                     )
 
-                    top = items[: int(effective_scan_limit)]
-                    bucket_scanned = len(top)
+                    # Build clusters (same signature method)
+                    groups: Dict[str, List[Dict[str, Any]]] = {}
+                    for a in items[: max(50, effective_scan_limit * 3)]:
+                        cid = _sig(a)
+                        groups.setdefault(cid, []).append(a)
+
+                    # Pick best item per cluster (quality/rank)
+                    clusters_best: List[Tuple[str, Dict[str, Any]]] = []
+                    for cid, gitems in groups.items():
+                        best = gitems[0]
+                        for it in gitems[1:]:
+                            if _quality_score(it) > _quality_score(best):
+                                best = it
+                            elif _quality_score(it) == _quality_score(best):
+                                if float(it.get("rank_score") or 0.0) > float(best.get("rank_score") or 0.0):
+                                    best = it
+                        clusters_best.append((cid, best))
+
+                    # Sort clusters by the best item's rank score
+                    clusters_best.sort(
+                        key=lambda t: (float((t[1].get("rank_score") or 0.0)), (t[1].get("published_utc") or "")),
+                        reverse=True,
+                    )
+
+                    top_clusters = clusters_best[: int(effective_scan_limit)]
+                    bucket_scanned = len(top_clusters)
 
                     candidates: List[Dict[str, str]] = []
-                    for a in top:
-                        if a.get("summary_en") and (a.get("summary_en") or "").strip():
+                    for cid, best in top_clusters:
+                        # If cluster cache exists (fresh), skip
+                        if _get_fresh_cluster_enrich(cid):
                             bucket_cached += 1
                             continue
+
+                        # If best already has English (link cache may have filled it), treat as cached too
+                        if (best.get("title_en") and best.get("summary_en")):
+                            bucket_cached += 1
+                            continue
+
                         candidates.append(
                             {
-                                "title": a.get("title") or "",
-                                "link": a.get("link") or "",
-                                "source": a.get("source") or "",
-                                "snippet": a.get("snippet_text") or "",
+                                "cluster_id": cid,
+                                "title": best.get("title") or "",
+                                "link": best.get("link") or "",
+                                "source": best.get("source") or "",
+                                "snippet": best.get("snippet_text") or "",
                             }
                         )
 
@@ -2355,7 +2514,7 @@ def _worker_loop() -> None:
                     if candidates:
                         for i in range(0, len(candidates), max(1, batch_size)):
                             chunk = candidates[i : i + max(1, batch_size)]
-                            ecount = _enrich_internal(chunk)
+                            ecount = _enrich_internal_clusters(chunk)
                             bucket_enriched += ecount
                             total_enriched += ecount
                             if total_queued >= max_new_total:

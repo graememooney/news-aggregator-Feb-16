@@ -96,14 +96,20 @@ export async function POST(request: Request) {
   const sanitized = items
     .map((it: any) => {
       if (!isObject(it)) return null;
+
       const title = clampStr(it.title, 280);
       const link = clampStr(it.link, 2048);
       const source = clampStr(it.source, 120);
       const snippet = clampStr(it.snippet, 1200);
 
+      // NEW: optional cluster_id (backwards compatible)
+      // - Allows backend to cache enrichment per cluster (cluster_enrich_cache)
+      const cluster_id = clampStr(it.cluster_id, 128);
+
       if (!title || !link || !source) return null;
 
-      return { title, link, source, snippet };
+      // Only include cluster_id if present (keeps payload clean)
+      return cluster_id ? { title, link, source, snippet, cluster_id } : { title, link, source, snippet };
     })
     .filter(Boolean);
 
