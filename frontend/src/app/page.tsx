@@ -81,6 +81,11 @@ const CATEGORY_ORDER = [
 
 type CategoryFilter = "all" | (typeof CATEGORY_ORDER)[number];
 
+type EnrichStatus = "idle" | "loading" | "ok" | "error";
+type EnrichState = { status: EnrichStatus; message?: string };
+
+type LoadError = { message: string; status?: number } | null;
+
 async function safeJson(res: Response) {
   const text = await res.text();
   if (!text) return null;
@@ -96,11 +101,6 @@ function initials(source: string) {
   if (!s) return "N";
   const parts = s.split(/\s+/).slice(0, 2);
   return parts.map((p) => p[0]?.toUpperCase()).join("");
-}
-
-function includesQuery(haystack: string | null | undefined, q: string) {
-  if (!haystack) return false;
-  return haystack.toLowerCase().includes(q);
 }
 
 // Curated clustered feed size
@@ -167,14 +167,7 @@ function isLaDiaria(link: string) {
 
 function MultiSourceIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      className="opacity-90"
-    >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="opacity-90">
       <path
         d="M8 7.5h10.5A2.5 2.5 0 0 1 21 10v10.5A2.5 2.5 0 0 1 18.5 23H8A2.5 2.5 0 0 1 5.5 20.5V10A2.5 2.5 0 0 1 8 7.5Z"
         stroke="currentColor"
@@ -186,7 +179,6 @@ function MultiSourceIcon() {
 }
 
 export default function Home() {
-  // Always clustered feed
   const [clusters, setClusters] = useState<Cluster[]>([]);
 
   const [query, setQuery] = useState("");
@@ -205,6 +197,12 @@ export default function Home() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [standalone, setStandalone] = useState(false);
   const [ios, setIos] = useState(false);
+
+  // NEW: top load error banner (backend offline, etc.)
+  const [loadError, setLoadError] = useState<LoadError>(null);
+
+  // Per-link enrich state
+  const [enrichState, setEnrichState] = useState<Record<string, EnrichState>>({});
 
   const inflightRef = useRef(false);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -232,39 +230,58 @@ export default function Home() {
   }, [topicsInData, category]);
 
   function openTranslated(link: string) {
-    const target = isLaDiaria(link)
-      ? `${window.location.origin}/api/reader?url=${encodeURIComponent(link)}`
-      : link;
-
+    const target = isLaDiaria(link) ? `${window.location.origin}/api/reader?url=${encodeURIComponent(link)}` : link;
     const encoded = encodeURIComponent(target);
     window.open(`https://translate.google.com/translate?sl=auto&tl=en&u=${encoded}`, "_blank");
   }
 
   async function loadTopStories(selectedRange = range, selectedCountry = country) {
     setLoading(true);
+    setLoadError(null);
 
     const limit = topLimitForCountry(selectedCountry);
 
-    const res = await fetch(
-      `/api/top?country=${encodeURIComponent(selectedCountry)}&range=${encodeURIComponent(
-        selectedRange
-      )}&q=&limit=${encodeURIComponent(String(limit))}`,
-      { cache: "no-store" }
-    );
+    try {
+      const res = await fetch(
+        `/api/top?country=${encodeURIComponent(selectedCountry)}&range=${encodeURIComponent(selectedRange)}&q=&limit=${encodeURIComponent(
+          String(limit)
+        )}`,
+        { cache: "no-store" }
+      );
 
-    const data = await safeJson(res);
-    const list: Cluster[] = (data?.clusters || []) as Cluster[];
+      const data = await safeJson(res);
 
-    setClusters(list);
+      if (!res.ok) {
+        const msg =
+          (data?.error as string) ||
+          (data?.detail as string) ||
+          "Could not load headlines. Backend may be offline.";
+        setClusters([]);
+        setLoadError({ message: msg, status: res.status });
+      } else {
+        const list: Cluster[] = (data?.clusters || []) as Cluster[];
+        setClusters(list);
 
-    queuedRef.current.clear();
-    queueRef.current = [];
-
-    setLoading(false);
+        // reset queues + per-link enrich state (fresh page)
+        queuedRef.current.clear();
+        queueRef.current = [];
+        setEnrichState({});
+      }
+    } catch (e: any) {
+      setClusters([]);
+      setLoadError({ message: "Could not load headlines. Backend may be offline.", status: 0 });
+    } finally {
+      setLoading(false);
+    }
   }
 
   function currentArticlesForEnrichLookup(): Article[] {
     return clusters.map((c) => c.best_item);
+  }
+
+  function setLinkState(link: string, next: EnrichState) {
+    if (!link) return;
+    setEnrichState((prev) => ({ ...prev, [link]: next }));
   }
 
   function applyEnrichedToState(link: string, title_en: string, summary_en: string) {
@@ -274,32 +291,60 @@ export default function Home() {
         return { ...c, best_item: { ...c.best_item, title_en, summary_en } };
       })
     );
+    setLinkState(link, { status: "ok" });
+  }
+
+  function markBatchLoading(links: string[]) {
+    setEnrichState((prev) => {
+      const next = { ...prev };
+      for (const link of links) {
+        const cur = next[link];
+        if (cur?.status === "ok") continue;
+        next[link] = { status: "loading" };
+      }
+      return next;
+    });
+  }
+
+  function markBatchError(links: string[], message?: string) {
+    setEnrichState((prev) => {
+      const next = { ...prev };
+      for (const link of links) {
+        const cur = next[link];
+        if (cur?.status === "ok") continue;
+        next[link] = { status: "error", message: message || "Summary unavailable." };
+      }
+      return next;
+    });
   }
 
   async function enrichBatch(links: string[]) {
     if (links.length === 0) return;
 
-    // Map link -> best_item for payload fields
     const lookup = new Map(currentArticlesForEnrichLookup().map((a) => [a.link, a]));
-    // Map link -> cluster_id (so backend can cache per cluster)
     const linkToClusterId = new Map(clusters.map((c) => [c.best_item.link, c.cluster_id]));
 
     const batch = links
       .map((l) => {
         const a = lookup.get(l);
         if (!a) return null;
+        if (a.title_en && a.summary_en) return null;
+
         const cluster_id = linkToClusterId.get(l) || "";
         return {
           title: a.title,
           link: a.link,
           source: a.source,
           snippet: a.snippet_text,
-          cluster_id, // ✅ NEW: enables cluster-level caching in backend
+          cluster_id,
         };
       })
       .filter(Boolean) as any[];
 
     if (batch.length === 0) return;
+
+    const batchLinks = batch.map((b) => String(b.link || "").trim()).filter(Boolean);
+    markBatchLoading(batchLinks);
 
     const res = await fetch("/api/enrich", {
       method: "POST",
@@ -311,11 +356,32 @@ export default function Home() {
     const data = await safeJson(res);
     const enriched = (data?.items || data?.backend_response?.items || []) as any[];
 
+    if (!res.ok) {
+      const msg =
+        (data?.error as string) ||
+        (data?.backend_response?.detail as string) ||
+        (data?.backend_response?.error as string) ||
+        "Summary unavailable.";
+      markBatchError(batchLinks, msg);
+      return;
+    }
+
+    const got = new Set<string>();
     for (const e of enriched) {
       const link = (e?.link || "").trim();
       if (!link) continue;
-      applyEnrichedToState(link, e.title_en || "", e.summary_en || "");
+
+      const t = (e?.title_en || "").trim();
+      const s = (e?.summary_en || "").trim();
+
+      if (t && s) {
+        applyEnrichedToState(link, t, s);
+        got.add(link);
+      }
     }
+
+    const missed = batchLinks.filter((l) => !got.has(l));
+    if (missed.length > 0) markBatchError(missed, "Summary unavailable.");
   }
 
   async function pumpQueue() {
@@ -337,12 +403,24 @@ export default function Home() {
     }
   }
 
+  function retryEnrich(link: string) {
+    const l = (link || "").trim();
+    if (!l) return;
+
+    setLinkState(l, { status: "idle" });
+    queuedRef.current.delete(l);
+
+    queueRef.current.push(l);
+    queuedRef.current.add(l);
+
+    pumpQueue();
+  }
+
   useEffect(() => {
     loadTopStories("24h", "uy");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // IntersectionObserver for enrichment
   useEffect(() => {
     const list = clusters.map((c) => c.best_item);
     if (list.length === 0) return;
@@ -362,6 +440,9 @@ export default function Home() {
 
           if (article.title_en && article.summary_en) continue;
 
+          const st = enrichState[link]?.status;
+          if (st === "error" || st === "loading") continue;
+
           if (!queuedRef.current.has(link)) {
             queuedRef.current.add(link);
             queueRef.current.push(link);
@@ -377,9 +458,8 @@ export default function Home() {
     Object.values(cardRefs.current).forEach((el) => el && observer.observe(el));
     return () => observer.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clusters]);
+  }, [clusters, enrichState]);
 
-  // Theme / storage hydration-safe
   useEffect(() => {
     setMounted(true);
 
@@ -395,7 +475,6 @@ export default function Home() {
     } catch {}
   }, []);
 
-  // beforeinstallprompt
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
@@ -432,6 +511,7 @@ export default function Home() {
       list = list.filter((c) => normalizeTopic(c.best_item.topic || c.topic) === category);
     }
 
+    const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return list;
 
     return list.filter((c) => {
@@ -442,7 +522,7 @@ export default function Home() {
         .toLowerCase();
       return hay.includes(normalizedQuery);
     });
-  }, [clusters, normalizedQuery, category]);
+  }, [clusters, query, category]);
 
   const missingCount = useMemo(() => {
     const list = clusters.map((c) => c.best_item);
@@ -473,9 +553,7 @@ export default function Home() {
           <h1 className="font-extrabold leading-tight tracking-tight text-5xl sm:text-6xl">
             <span className="text-blue-500">Mercosur</span> News
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
-            Your Source for Regional Information
-          </p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">Your Source for Regional Information</p>
         </div>
 
         <div className="flex items-center gap-3 mt-2">
@@ -511,13 +589,36 @@ export default function Home() {
       <div className="flex items-baseline justify-between gap-4 mb-6">
         <h2 className="text-3xl font-bold">{selectedCountryName} News</h2>
         <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm whitespace-nowrap">
-          {loading ? "" : missingCount > 0 ? "" : ""}
+          {loading ? "Loading…" : enriching ? "Enriching…" : missingCount > 0 ? "" : ""}
         </span>
       </div>
 
+      {/* NEW: backend offline banner */}
+      {loadError ? (
+        <div className="mb-6 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-white/5 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-sm text-gray-800 dark:text-white/80">
+              <div className="font-semibold">Could not load headlines</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">
+                {loadError.message}
+                {typeof loadError.status === "number" && loadError.status ? ` (status ${loadError.status})` : ""}
+              </div>
+              <div className="mt-2 text-gray-600 dark:text-gray-400">
+                If you stopped the backend, start it again, then click Retry.
+              </div>
+            </div>
+            <button
+              onClick={() => loadTopStories(range, country)}
+              className="inline-flex items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition bg-black text-white dark:bg-white dark:text-black hover:opacity-90 whitespace-nowrap"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Controls row */}
       <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
-        {/* Date Range */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Date Range</label>
           <select
@@ -536,7 +637,6 @@ export default function Home() {
           </select>
         </div>
 
-        {/* Select Country */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Select Country</label>
           <select
@@ -556,7 +656,6 @@ export default function Home() {
           </select>
         </div>
 
-        {/* Category */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Category</label>
           <select
@@ -573,7 +672,6 @@ export default function Home() {
           </select>
         </div>
 
-        {/* Search */}
         <div className="md:col-span-3">
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Search</label>
           <div className="flex items-center gap-3">
@@ -612,6 +710,10 @@ export default function Home() {
           const topic = normalizeTopic(a.topic || c.topic);
           const multiSource = (c.sources_count || 0) > 1;
 
+          const link = a.link;
+          const st = enrichState[link]?.status || "idle";
+          const errMsg = enrichState[link]?.message || "Summary unavailable.";
+
           return (
             <div
               key={c.cluster_id}
@@ -640,9 +742,7 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-2 mb-2">
-                {a.country_flag_url ? (
-                  <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" />
-                ) : null}
+                {a.country_flag_url ? <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" /> : null}
 
                 {showLogo ? (
                   <img
@@ -663,17 +763,32 @@ export default function Home() {
                 <span className="text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
               </div>
 
+              {/* Title */}
               {titleReady ? (
                 <h3 className="font-semibold text-lg">{a.title_en}</h3>
               ) : (
-                <div className="mt-1 space-y-2 animate-pulse">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/6" />
-                </div>
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white/90">{a.title}</h3>
               )}
 
+              {/* Summary */}
               {summaryReady ? (
                 <p className="mt-2 text-gray-800 dark:text-white/80">{a.summary_en}</p>
+              ) : st === "error" ? (
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{errMsg}</p>
+                  <button
+                    onClick={() => retryEnrich(a.link)}
+                    className="inline-flex items-center rounded-full border border-gray-500 px-3 py-1.5 text-xs transition bg-transparent text-black dark:text-white hover:opacity-90 whitespace-nowrap"
+                    aria-label="Retry summary enrichment"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : st === "loading" ? (
+                <div className="mt-3 space-y-2 animate-pulse">
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-4/6" />
+                </div>
               ) : (
                 <div className="mt-3 space-y-2 animate-pulse">
                   <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
@@ -735,8 +850,7 @@ export default function Home() {
                     <span className="text-gray-800 dark:text-white/80">Date Range:</span> filter by recency.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Select Country:</span> view by country (or all /
-                    MercoPress).
+                    <span className="text-gray-800 dark:text-white/80">Select Country:</span> view by country (or all / MercoPress).
                   </li>
                   <li>
                     <span className="text-gray-800 dark:text-white/80">Category:</span> filter the feed by topic.
@@ -751,9 +865,7 @@ export default function Home() {
                 <div className="font-semibold text-gray-900 dark:text-white">Add to Home Screen</div>
 
                 {standalone ? (
-                  <div className="mt-2 text-gray-600 dark:text-gray-400">
-                    You’re already running Mercosur News in installed mode.
-                  </div>
+                  <div className="mt-2 text-gray-600 dark:text-gray-400">You’re already running Mercosur News in installed mode.</div>
                 ) : installEvent ? (
                   <div className="mt-2 flex items-center justify-between gap-3">
                     <div className="text-gray-600 dark:text-gray-400">Your browser supports installing this app.</div>
@@ -778,8 +890,8 @@ export default function Home() {
               <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
                 <div className="font-semibold text-gray-900 dark:text-white">Notes</div>
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Topics are automatically labeled. Translation and summarization are generated as stories enter view to
-                  keep the feed responsive.
+                  Topics are automatically labeled. Translation and summarization are generated as stories enter view to keep the feed
+                  responsive.
                 </p>
               </div>
             </div>
