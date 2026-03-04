@@ -198,10 +198,8 @@ export default function Home() {
   const [standalone, setStandalone] = useState(false);
   const [ios, setIos] = useState(false);
 
-  // NEW: top load error banner (backend offline, etc.)
   const [loadError, setLoadError] = useState<LoadError>(null);
 
-  // Per-link enrich state
   const [enrichState, setEnrichState] = useState<Record<string, EnrichState>>({});
 
   const inflightRef = useRef(false);
@@ -212,7 +210,7 @@ export default function Home() {
   const failedLogosRef = useRef<Set<string>>(new Set());
   const [, forceRerender] = useState(0);
 
-  const normalizedQuery = useMemo(() => query.trim().toLowerCase(), [query]);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const topicsInData = useMemo(() => {
     const s = new Set<string>();
@@ -235,6 +233,18 @@ export default function Home() {
     window.open(`https://translate.google.com/translate?sl=auto&tl=en&u=${encoded}`, "_blank");
   }
 
+  function performSearchAction() {
+    // Search is already “live” while typing. This just improves UX:
+    // - scroll to top so users see the first matches
+    // - blur input to close mobile keyboard
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {}
+    try {
+      searchInputRef.current?.blur();
+    } catch {}
+  }
+
   async function loadTopStories(selectedRange = range, selectedCountry = country) {
     setLoading(true);
     setLoadError(null);
@@ -255,21 +265,20 @@ export default function Home() {
         const msg =
           (data?.error as string) ||
           (data?.detail as string) ||
-          "Could not load headlines. Backend may be offline.";
+          "We couldn’t load headlines right now.";
         setClusters([]);
         setLoadError({ message: msg, status: res.status });
       } else {
         const list: Cluster[] = (data?.clusters || []) as Cluster[];
         setClusters(list);
 
-        // reset queues + per-link enrich state (fresh page)
         queuedRef.current.clear();
         queueRef.current = [];
         setEnrichState({});
       }
     } catch (e: any) {
       setClusters([]);
-      setLoadError({ message: "Could not load headlines. Backend may be offline.", status: 0 });
+      setLoadError({ message: "We couldn’t load headlines right now.", status: 0 });
     } finally {
       setLoading(false);
     }
@@ -331,13 +340,7 @@ export default function Home() {
         if (a.title_en && a.summary_en) return null;
 
         const cluster_id = linkToClusterId.get(l) || "";
-        return {
-          title: a.title,
-          link: a.link,
-          source: a.source,
-          snippet: a.snippet_text,
-          cluster_id,
-        };
+        return { title: a.title, link: a.link, source: a.source, snippet: a.snippet_text, cluster_id };
       })
       .filter(Boolean) as any[];
 
@@ -593,19 +596,18 @@ export default function Home() {
         </span>
       </div>
 
-      {/* NEW: backend offline banner */}
+      {/* Product-ish banner */}
       {loadError ? (
         <div className="mb-6 rounded border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-white/5 p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="text-sm text-gray-800 dark:text-white/80">
-              <div className="font-semibold">Could not load headlines</div>
+              <div className="font-semibold">Service temporarily unavailable</div>
               <div className="mt-1 text-gray-600 dark:text-gray-400">
-                {loadError.message}
-                {typeof loadError.status === "number" && loadError.status ? ` (status ${loadError.status})` : ""}
+                We couldn’t load headlines right now. Please try again in a moment.
               </div>
-              <div className="mt-2 text-gray-600 dark:text-gray-400">
-                If you stopped the backend, start it again, then click Retry.
-              </div>
+              {typeof loadError.status === "number" && loadError.status ? (
+                <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">Error code: {loadError.status}</div>
+              ) : null}
             </div>
             <button
               onClick={() => loadTopStories(range, country)}
@@ -676,17 +678,23 @@ export default function Home() {
           <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Search</label>
           <div className="flex items-center gap-3">
             <input
+              ref={searchInputRef}
               className="h-10 w-full text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-black dark:text-white px-3 rounded placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400"
               placeholder={"Headlines & summaries"}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  performSearchAction();
+                }
+              }}
             />
 
             <button
               className="h-10 bg-black text-white dark:bg-white dark:text-black px-4 rounded border border-gray-300 hover:opacity-90 whitespace-nowrap shrink-0"
-              onClick={() => {
-                // client-side only; button kept for UX
-              }}
+              onClick={performSearchAction}
+              title="Search (filters as you type)"
             >
               Search
             </button>
@@ -763,14 +771,12 @@ export default function Home() {
                 <span className="text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
               </div>
 
-              {/* Title */}
               {titleReady ? (
                 <h3 className="font-semibold text-lg">{a.title_en}</h3>
               ) : (
                 <h3 className="font-semibold text-lg text-gray-900 dark:text-white/90">{a.title}</h3>
               )}
 
-              {/* Summary */}
               {summaryReady ? (
                 <p className="mt-2 text-gray-800 dark:text-white/80">{a.summary_en}</p>
               ) : st === "error" ? (
@@ -838,8 +844,8 @@ export default function Home() {
                   readable feed.
                 </p>
                 <p className="mt-2">
-                  As you scroll, headlines are translated into English and paired with short English summaries. You can
-                  open any source article via Google Translate to view the full story in English.
+                  As you scroll, headlines are translated into English and paired with short English summaries. You can open any source
+                  article via Google Translate to view the full story in English.
                 </p>
               </div>
 
