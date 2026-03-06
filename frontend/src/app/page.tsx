@@ -55,6 +55,7 @@ const MERCOSUR_COUNTRIES: CountryOption[] = [
 ];
 
 const ENRICH_BATCH_SIZE = 3;
+const PRIORITY_ENRICH_COUNT = 5;
 const OBSERVER_ROOT_MARGIN = "900px";
 
 const UNCATEGORIZED = "General";
@@ -84,6 +85,13 @@ type EnrichStatus = "idle" | "loading" | "ok" | "error";
 type EnrichState = { status: EnrichStatus; message?: string };
 
 type LoadError = { message: string; status?: number } | null;
+
+const STORAGE_KEYS = {
+  theme: "mercosur-news-theme",
+  country: "mercosur-news-country",
+  range: "mercosur-news-range",
+  category: "mercosur-news-category",
+} as const;
 
 async function safeJson(res: Response) {
   const text = await res.text();
@@ -128,14 +136,8 @@ function formatPublishedUTC(a: Article) {
   return `${yyyy}-${mm}-${dd} ${hh}:${min} UTC`;
 }
 
-function ageHoursFromUTC(iso?: string | null) {
-  const s = (iso || "").trim();
-  if (!s) return null;
-  const t = Date.parse(s);
-  if (Number.isNaN(t)) return null;
-  const now = Date.now();
-  const diffMs = Math.max(0, now - t);
-  return diffMs / 3600000;
+function storyCountLabel(count: number) {
+  return `${count} ${count === 1 ? "story" : "stories"}`;
 }
 
 type BeforeInstallPromptEvent = Event & {
@@ -171,17 +173,16 @@ function isLaDiaria(link: string) {
   }
 }
 
-function MultiSourceIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="opacity-90">
-      <path
-        d="M8 7.5h10.5A2.5 2.5 0 0 1 21 10v10.5A2.5 2.5 0 0 1 18.5 23H8A2.5 2.5 0 0 1 5.5 20.5V10A2.5 2.5 0 0 1 8 7.5Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-      />
-      <path d="M3 14V5.5A2.5 2.5 0 0 1 5.5 3H14" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
+function isValidCountryKey(value: string): value is CountryOption["key"] {
+  return ["all", "mp", "uy", "ar", "br", "py", "bo"].includes(value);
+}
+
+function isValidRange(value: string) {
+  return ["24h", "3d", "7d", "30d"].includes(value);
+}
+
+function isValidCategory(value: string): value is CategoryFilter {
+  return value === "all" || CATEGORY_ORDER.includes(value as (typeof CATEGORY_ORDER)[number]);
 }
 
 export default function Home() {
@@ -193,10 +194,10 @@ export default function Home() {
   const [category, setCategory] = useState<CategoryFilter>("all");
 
   const [loading, setLoading] = useState(false);
-  const [enriching, setEnriching] = useState(false);
 
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [mounted, setMounted] = useState(false);
+  const [prefsReady, setPrefsReady] = useState(false);
 
   const [infoOpen, setInfoOpen] = useState(false);
 
@@ -245,6 +246,17 @@ export default function Home() {
     } catch {}
     try {
       searchInputRef.current?.blur();
+    } catch {}
+  }
+
+  function clearSearchAndCategory() {
+    setQuery("");
+    setCategory("all");
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {}
+    try {
+      searchInputRef.current?.focus();
     } catch {}
   }
 
@@ -391,14 +403,12 @@ export default function Home() {
     if (inflightRef.current || queueRef.current.length === 0) return;
 
     inflightRef.current = true;
-    setEnriching(true);
 
     try {
       const next = queueRef.current.splice(0, ENRICH_BATCH_SIZE);
       await enrichBatch(next);
     } finally {
       inflightRef.current = false;
-      setEnriching(false);
 
       if (queueRef.current.length > 0) {
         setTimeout(pumpQueue, 50);
@@ -420,9 +430,78 @@ export default function Home() {
   }
 
   useEffect(() => {
-    loadTopStories("24h", "uy");
+    let savedTheme: "dark" | "light" = "dark";
+    let savedCountry: CountryOption["key"] = "uy";
+    let savedRange = "24h";
+    let savedCategory: CategoryFilter = "all";
+
+    try {
+      const themeRaw = window.localStorage.getItem(STORAGE_KEYS.theme);
+      if (themeRaw === "light" || themeRaw === "dark") {
+        savedTheme = themeRaw;
+      }
+
+      const countryRaw = window.localStorage.getItem(STORAGE_KEYS.country);
+      if (countryRaw && isValidCountryKey(countryRaw)) {
+        savedCountry = countryRaw;
+      }
+
+      const rangeRaw = window.localStorage.getItem(STORAGE_KEYS.range);
+      if (rangeRaw && isValidRange(rangeRaw)) {
+        savedRange = rangeRaw;
+      }
+
+      const categoryRaw = window.localStorage.getItem(STORAGE_KEYS.category);
+      if (categoryRaw && isValidCategory(categoryRaw)) {
+        savedCategory = categoryRaw;
+      }
+    } catch {}
+
+    setMounted(true);
+    setTheme(savedTheme);
+
+    try {
+      setIos(isIOS());
+      setStandalone(isStandalone());
+    } catch {}
+
+    setCountry(savedCountry);
+    setRange(savedRange);
+    setCategory(savedCategory);
+    setPrefsReady(true);
+
+    loadTopStories(savedRange, savedCountry);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (clusters.length === 0) return;
+
+    const priorityLinks: string[] = [];
+    for (const c of clusters) {
+      const a = c.best_item;
+      const link = (a.link || "").trim();
+      if (!link) continue;
+      if (a.title_en && a.summary_en) continue;
+
+      const st = enrichState[link]?.status;
+      if (st === "loading" || st === "error" || st === "ok") continue;
+      if (queuedRef.current.has(link)) continue;
+
+      priorityLinks.push(link);
+      if (priorityLinks.length >= PRIORITY_ENRICH_COUNT) break;
+    }
+
+    if (priorityLinks.length === 0) return;
+
+    for (const link of priorityLinks) {
+      queuedRef.current.add(link);
+      queueRef.current.push(link);
+    }
+
+    pumpQueue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clusters]);
 
   useEffect(() => {
     const list = clusters.map((c) => c.best_item);
@@ -464,21 +543,6 @@ export default function Home() {
   }, [clusters, enrichState]);
 
   useEffect(() => {
-    setMounted(true);
-
-    try {
-      const saved = window.localStorage.getItem("theme");
-      const t = saved === "light" || saved === "dark" ? saved : "dark";
-      setTheme(t);
-    } catch {}
-
-    try {
-      setIos(isIOS());
-      setStandalone(isStandalone());
-    } catch {}
-  }, []);
-
-  useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallEvent(e as BeforeInstallPromptEvent);
@@ -503,9 +567,30 @@ export default function Home() {
     if (!mounted) return;
     applyTheme(theme);
     try {
-      window.localStorage.setItem("theme", theme);
+      window.localStorage.setItem(STORAGE_KEYS.theme, theme);
     } catch {}
   }, [theme, mounted]);
+
+  useEffect(() => {
+    if (!prefsReady) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEYS.country, country);
+    } catch {}
+  }, [country, prefsReady]);
+
+  useEffect(() => {
+    if (!prefsReady) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEYS.range, range);
+    } catch {}
+  }, [range, prefsReady]);
+
+  useEffect(() => {
+    if (!prefsReady) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEYS.category, category);
+    } catch {}
+  }, [category, prefsReady]);
 
   const filteredClusters = useMemo(() => {
     let list = clusters;
@@ -524,30 +609,10 @@ export default function Home() {
     });
   }, [clusters, query, category]);
 
-  const mostReportedSet = useMemo(() => {
-    const list = [...filteredClusters];
-    list.sort((a, b) => {
-      const as = Number(a.sources_count || 0);
-      const bs = Number(b.sources_count || 0);
-      if (bs !== as) return bs - as;
-
-      const ad = Number(a.duplicates_count || 0);
-      const bd = Number(b.duplicates_count || 0);
-      if (bd !== ad) return bd - ad;
-
-      const ap = Date.parse(a.best_item.published_utc || "") || 0;
-      const bp = Date.parse(b.best_item.published_utc || "") || 0;
-      return bp - ap;
-    });
-
-    const top = list.slice(0, Math.min(3, list.length)).map((c) => c.cluster_id);
-    return new Set(top);
-  }, [filteredClusters]);
-
-  const missingCount = useMemo(() => {
-    const list = clusters.map((c) => c.best_item);
-    return list.filter((a) => !a.title_en || !a.summary_en).length;
-  }, [clusters]);
+  const hasActiveSearch = query.trim().length > 0;
+  const hasActiveCategory = category !== "all";
+  const showEmptyState = !loading && !loadError && clusters.length > 0 && filteredClusters.length === 0;
+  const showClearFilters = showEmptyState && (hasActiveSearch || hasActiveCategory);
 
   async function handleInstallClick() {
     if (standalone) return;
@@ -567,10 +632,10 @@ export default function Home() {
   const installButtonLabel = installEvent ? "Install" : "Add to Home";
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-6 sm:p-8 overflow-x-hidden">
+    <main className="mx-auto max-w-5xl overflow-x-hidden px-4 py-6 sm:p-8">
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="font-extrabold leading-tight tracking-tight text-5xl sm:text-6xl break-words">
+          <h1 className="break-words text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">
             <span className="text-blue-500">Mercosur</span> News
           </h1>
           <p className="mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400 sm:text-base">Your Source for Regional Information</p>
@@ -580,7 +645,7 @@ export default function Home() {
           <button
             onClick={() => setInfoOpen(true)}
             aria-label="Info"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-500 text-sm transition bg-transparent text-blue-500 hover:text-blue-400"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-500 bg-transparent text-sm text-blue-500 transition hover:text-blue-400"
           >
             <span className="italic font-semibold">i</span>
           </button>
@@ -588,7 +653,7 @@ export default function Home() {
           {!standalone ? (
             <button
               onClick={handleInstallClick}
-              className="inline-flex min-h-10 items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition bg-transparent text-black dark:text-white hover:opacity-90"
+              className="inline-flex min-h-10 items-center rounded-full border border-gray-500 bg-transparent px-4 py-2 text-sm text-black transition hover:opacity-90 dark:text-white"
               title="Add this app to your home screen"
             >
               {installButtonLabel}
@@ -597,7 +662,7 @@ export default function Home() {
 
           <button
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            className="inline-flex min-h-10 items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition bg-black text-white dark:bg-white dark:text-black hover:opacity-90"
+            className="inline-flex min-h-10 items-center rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
           >
             {mounted ? (theme === "dark" ? "Light mode" : "Dark mode") : "Theme"}
           </button>
@@ -606,11 +671,13 @@ export default function Home() {
 
       <hr className="mb-10 border-gray-200 dark:border-gray-800" />
 
-      <div className="mb-6 flex items-baseline justify-between gap-4">
-        <h2 className="text-3xl font-bold">{selectedCountryName} News</h2>
-        <span className="whitespace-nowrap text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
-          {loading ? "Loading…" : enriching ? "Enriching…" : missingCount > 0 ? "" : ""}
-        </span>
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-3xl font-bold">{selectedCountryName} News</h2>
+          {!loading && !loadError ? (
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{storyCountLabel(filteredClusters.length)}</p>
+          ) : null}
+        </div>
       </div>
 
       {loadError ? (
@@ -717,7 +784,34 @@ export default function Home() {
         </div>
       </div>
 
-      {loading && <p className="text-gray-600 dark:text-gray-400">Loading…</p>}
+      {showEmptyState ? (
+        <div className="rounded border border-gray-200 bg-gray-50 px-5 py-8 text-center dark:border-gray-800 dark:bg-white/[0.03]">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No stories matched your filters</h3>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            Try clearing your search or switching category filters to see more stories in this feed.
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+            {hasActiveSearch ? (
+              <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">Search: {query}</span>
+            ) : null}
+            {hasActiveCategory ? (
+              <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">Category: {category}</span>
+            ) : null}
+          </div>
+
+          {showClearFilters ? (
+            <div className="mt-5">
+              <button
+                onClick={clearSearchAndCategory}
+                className="inline-flex items-center rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="space-y-6">
         {filteredClusters.map((c) => {
@@ -732,23 +826,10 @@ export default function Home() {
           const translatedReady = titleReady && summaryReady;
 
           const topic = normalizeTopic(a.topic || c.topic);
-          const multiSource = (c.sources_count || 0) > 1;
 
           const link = a.link;
           const st = enrichState[link]?.status || "idle";
           const errMsg = enrichState[link]?.message || "Summary unavailable.";
-
-          const isMostReported = mostReportedSet.has(c.cluster_id);
-
-          const ageH = ageHoursFromUTC(a.published_utc);
-          const sourcesCount = Number(c.sources_count || 0);
-          const reportsCount = Number(c.duplicates_count || 0);
-
-          const isTrending =
-            (ageH !== null && ageH <= 6 && sourcesCount >= 3) ||
-            (ageH !== null && ageH <= 6 && reportsCount >= 4);
-
-          const showTranslatingState = !translatedReady && st !== "error";
 
           return (
             <div
@@ -763,59 +844,31 @@ export default function Home() {
                   : "border-gray-200 bg-gray-50/70 opacity-70 dark:border-gray-800 dark:bg-white/[0.03]"
               }`}
             >
-              <div className="mb-3 flex items-center gap-2">
-                {a.country_flag_url ? <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" /> : null}
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  {a.country_flag_url ? <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" /> : null}
 
-                {showLogo ? (
-                  <img
-                    src={a.source_logo as string}
-                    alt={a.source}
-                    className="h-5 w-5 object-contain"
-                    onError={() => {
-                      failedLogosRef.current.add(src);
-                      forceRerender((x) => x + 1);
-                    }}
-                  />
-                ) : (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-200 bg-gray-100 px-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                    {initials(a.source)}
-                  </span>
-                )}
+                  {showLogo ? (
+                    <img
+                      src={a.source_logo as string}
+                      alt={a.source}
+                      className="h-5 w-5 object-contain"
+                      onError={() => {
+                        failedLogosRef.current.add(src);
+                        forceRerender((x) => x + 1);
+                      }}
+                    />
+                  ) : (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-200 bg-gray-100 px-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                      {initials(a.source)}
+                    </span>
+                  )}
 
-                <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
-              </div>
-
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                {isMostReported ? (
-                  <span
-                    title="Most reported in this view"
-                    className="rounded-full border border-gray-200 bg-gray-900 px-2 py-1 text-[10px] text-white dark:border-gray-700 dark:bg-white dark:text-black"
-                  >
-                    MOST REPORTED
-                  </span>
-                ) : null}
-
-                {isTrending ? (
-                  <span
-                    title="Trending right now"
-                    className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[10px] text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80"
-                  >
-                    TRENDING ↑
-                  </span>
-                ) : null}
-
-                {multiSource ? (
-                  <span
-                    title="Multiple sources"
-                    className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80"
-                    aria-label="Multiple sources"
-                  >
-                    <MultiSourceIcon />
-                  </span>
-                ) : null}
+                  <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
+                </div>
 
                 {topic ? (
-                  <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80">
+                  <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80">
                     {topic}
                   </span>
                 ) : null}
@@ -824,36 +877,16 @@ export default function Home() {
               {translatedReady ? (
                 <>
                   <h3 className="text-lg font-semibold">{a.title_en}</h3>
-
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-gray-600 dark:text-gray-400">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="font-medium text-gray-700 dark:text-white/80">{sourcesCount}</span> sources
-                    </span>
-                    <span className="opacity-60">·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="font-medium text-gray-700 dark:text-white/80">{reportsCount}</span> reports
-                    </span>
-                  </div>
-
                   <p className="mt-2 text-gray-800 dark:text-white/80">{a.summary_en}</p>
                 </>
               ) : st === "error" ? (
                 <>
                   <div className="mb-2 h-6 w-40 rounded bg-gray-200 dark:bg-gray-700" />
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[12px] text-gray-600 dark:text-gray-400">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="font-medium text-gray-700 dark:text-white/80">{sourcesCount}</span> sources
-                    </span>
-                    <span className="opacity-60">·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="font-medium text-gray-700 dark:text-white/80">{reportsCount}</span> reports
-                    </span>
-                  </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <p className="text-sm text-gray-600 dark:text-gray-400">{errMsg}</p>
                     <button
                       onClick={() => retryEnrich(a.link)}
-                      className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-500 px-3 py-1.5 text-xs transition bg-transparent text-black hover:opacity-90 dark:text-white"
+                      className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-500 bg-transparent px-3 py-1.5 text-xs text-black transition hover:opacity-90 dark:text-white"
                       aria-label="Retry summary enrichment"
                     >
                       Retry
@@ -861,25 +894,11 @@ export default function Home() {
                   </div>
                 </>
               ) : (
-                <>
-                  <div className="mb-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {showTranslatingState ? "Translating…" : ""}
-                  </div>
-                  <div className="space-y-3 animate-pulse">
-                    <div className="h-6 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="flex flex-wrap items-center gap-2 text-[12px] text-gray-600 dark:text-gray-400">
-                      <span className="inline-flex items-center gap-1">
-                        <span className="font-medium text-gray-700 dark:text-white/80">{sourcesCount}</span> sources
-                      </span>
-                      <span className="opacity-60">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="font-medium text-gray-700 dark:text-white/80">{reportsCount}</span> reports
-                      </span>
-                    </div>
-                    <div className="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="h-3 w-4/6 rounded bg-gray-200 dark:bg-gray-700" />
-                  </div>
-                </>
+                <div className="animate-pulse space-y-3">
+                  <div className="h-6 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                  <div className="h-3 w-4/6 rounded bg-gray-200 dark:bg-gray-700" />
+                </div>
               )}
 
               <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{formatPublishedUTC(a)}</p>
@@ -903,7 +922,7 @@ export default function Home() {
       {infoOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button className="absolute inset-0 bg-black/60" aria-label="Close" onClick={() => setInfoOpen(false)} />
-          <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-xl overflow-y-auto overflow-x-hidden rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-black">
+          <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-xl overflow-x-hidden overflow-y-auto rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-black">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <h3 className="break-words text-lg font-semibold">About Mercosur News</h3>
@@ -921,7 +940,7 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="mt-4 space-y-4 break-words text-sm leading-relaxed overflow-x-hidden">
+            <div className="mt-4 space-y-4 overflow-x-hidden break-words text-sm leading-relaxed">
               <div className="text-gray-800 dark:text-white/80">
                 <p>
                   Mercosur News aggregates public RSS headlines across the Mercosur region and presents them in a clean, readable feed.
