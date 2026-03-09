@@ -44,6 +44,8 @@ type CountryOption = {
   flag_url: string;
 };
 
+type HeadlineLimit = 30 | 50 | 100 | 200;
+
 const MERCOSUR_COUNTRIES: CountryOption[] = [
   { key: "all", code: "ALL", name: "All Mercosur", flag_url: "" },
   { key: "mp", code: "MP", name: "MercoPress", flag_url: "" },
@@ -53,6 +55,8 @@ const MERCOSUR_COUNTRIES: CountryOption[] = [
   { key: "py", code: "PY", name: "Paraguay", flag_url: "https://flagcdn.com/w40/py.png" },
   { key: "bo", code: "BO", name: "Bolivia", flag_url: "https://flagcdn.com/w40/bo.png" },
 ];
+
+const HEADLINE_LIMIT_OPTIONS: HeadlineLimit[] = [30, 50, 100, 200];
 
 const ENRICH_BATCH_SIZE = 3;
 const PRIORITY_ENRICH_COUNT = 5;
@@ -92,6 +96,7 @@ const STORAGE_KEYS = {
   country: "mercosur-news-country",
   range: "mercosur-news-range",
   category: "mercosur-news-category",
+  headlineLimit: "mercosur-news-headline-limit",
 } as const;
 
 async function safeJson(res: Response) {
@@ -109,11 +114,6 @@ function initials(source: string) {
   if (!s) return "N";
   const parts = s.split(/\s+/).slice(0, 2);
   return parts.map((p) => p[0]?.toUpperCase()).join("");
-}
-
-function topLimitForCountry(country: CountryOption["key"]) {
-  if (country === "all") return 30;
-  return 25;
 }
 
 function applyTheme(theme: "dark" | "light") {
@@ -186,6 +186,10 @@ function isValidCategory(value: string): value is CategoryFilter {
   return value === "all" || CATEGORY_ORDER.includes(value as (typeof CATEGORY_ORDER)[number]);
 }
 
+function isValidHeadlineLimit(value: string): value is `${HeadlineLimit}` {
+  return ["30", "50", "100", "200"].includes(value);
+}
+
 export default function Home() {
   const [clusters, setClusters] = useState<Cluster[]>([]);
 
@@ -193,6 +197,7 @@ export default function Home() {
   const [range, setRange] = useState("24h");
   const [country, setCountry] = useState<CountryOption["key"]>("uy");
   const [category, setCategory] = useState<CategoryFilter>("all");
+  const [headlineLimit, setHeadlineLimit] = useState<HeadlineLimit>(30);
 
   const [loading, setLoading] = useState(false);
 
@@ -261,17 +266,19 @@ export default function Home() {
     } catch {}
   }
 
-  async function loadTopStories(selectedRange = range, selectedCountry = country) {
+  async function loadTopStories(
+    selectedRange = range,
+    selectedCountry = country,
+    selectedHeadlineLimit = headlineLimit
+  ) {
     setLoading(true);
     setLoadError(null);
 
-    const limit = topLimitForCountry(selectedCountry);
-
     try {
       const res = await fetch(
-        `/api/top?country=${encodeURIComponent(selectedCountry)}&range=${encodeURIComponent(selectedRange)}&q=&limit=${encodeURIComponent(
-          String(limit)
-        )}`,
+        `/api/top?country=${encodeURIComponent(selectedCountry)}&range=${encodeURIComponent(
+          selectedRange
+        )}&q=&limit=${encodeURIComponent(String(selectedHeadlineLimit))}`,
         { cache: "no-store" }
       );
 
@@ -433,6 +440,7 @@ export default function Home() {
     let savedCountry: CountryOption["key"] = "uy";
     let savedRange = "24h";
     let savedCategory: CategoryFilter = "all";
+    let savedHeadlineLimit: HeadlineLimit = 30;
 
     try {
       const themeRaw = window.localStorage.getItem(STORAGE_KEYS.theme);
@@ -454,6 +462,11 @@ export default function Home() {
       if (categoryRaw && isValidCategory(categoryRaw)) {
         savedCategory = categoryRaw;
       }
+
+      const headlineLimitRaw = window.localStorage.getItem(STORAGE_KEYS.headlineLimit);
+      if (headlineLimitRaw && isValidHeadlineLimit(headlineLimitRaw)) {
+        savedHeadlineLimit = Number(headlineLimitRaw) as HeadlineLimit;
+      }
     } catch {}
 
     setMounted(true);
@@ -467,9 +480,10 @@ export default function Home() {
     setCountry(savedCountry);
     setRange(savedRange);
     setCategory(savedCategory);
+    setHeadlineLimit(savedHeadlineLimit);
     setPrefsReady(true);
 
-    loadTopStories(savedRange, savedCountry);
+    loadTopStories(savedRange, savedCountry, savedHeadlineLimit);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -591,6 +605,13 @@ export default function Home() {
     } catch {}
   }, [category, prefsReady]);
 
+  useEffect(() => {
+    if (!prefsReady) return;
+    try {
+      window.localStorage.setItem(STORAGE_KEYS.headlineLimit, String(headlineLimit));
+    } catch {}
+  }, [headlineLimit, prefsReady]);
+
   const filteredClusters = useMemo(() => {
     let list = clusters;
 
@@ -692,7 +713,7 @@ export default function Home() {
               ) : null}
             </div>
             <button
-              onClick={() => loadTopStories(range, country)}
+              onClick={() => loadTopStories(range, country, headlineLimit)}
               className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
             >
               Retry
@@ -701,7 +722,7 @@ export default function Home() {
         </div>
       ) : null}
 
-      <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-12 md:items-end">
+      <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-15 md:items-end">
         <div className="md:col-span-3">
           <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Date Range</label>
           <select
@@ -709,7 +730,7 @@ export default function Home() {
             onChange={(e) => {
               const val = e.target.value;
               setRange(val);
-              loadTopStories(val, country);
+              loadTopStories(val, country, headlineLimit);
             }}
             className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-500 dark:bg-gray-900 dark:text-white"
           >
@@ -727,7 +748,7 @@ export default function Home() {
             onChange={(e) => {
               const val = e.target.value as CountryOption["key"];
               setCountry(val);
-              loadTopStories(range, val);
+              loadTopStories(range, val, headlineLimit);
             }}
             className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-500 dark:bg-gray-900 dark:text-white"
           >
@@ -755,7 +776,26 @@ export default function Home() {
           </select>
         </div>
 
-        <div className="md:col-span-3">
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Headline Limit</label>
+          <select
+            value={headlineLimit}
+            onChange={(e) => {
+              const val = Number(e.target.value) as HeadlineLimit;
+              setHeadlineLimit(val);
+              loadTopStories(range, country, val);
+            }}
+            className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-500 dark:bg-gray-900 dark:text-white"
+          >
+            {HEADLINE_LIMIT_OPTIONS.map((limit) => (
+              <option key={limit} value={limit}>
+                Top {limit}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-4">
           <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Search</label>
           <div className="flex items-center gap-3">
             <input
@@ -961,6 +1001,9 @@ export default function Home() {
                   </li>
                   <li>
                     <span className="text-gray-800 dark:text-white/80">Category:</span> filter the feed by topic.
+                  </li>
+                  <li>
+                    <span className="text-gray-800 dark:text-white/80">Headline Limit:</span> choose how many top stories to load.
                   </li>
                   <li>
                     <span className="text-gray-800 dark:text-white/80">Search:</span> filter headlines and summaries.
