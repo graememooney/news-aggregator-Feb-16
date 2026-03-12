@@ -989,7 +989,7 @@ export default function Home() {
               <div className="min-w-0">
                 <h3 className="break-words text-lg font-semibold">About Mercosur News</h3>
                 <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">
-                  RSS headlines across Mercosur, translated to English with short summaries.
+                  A mobile-friendly regional intelligence feed for Mercosur headlines, translated into English.
                 </p>
               </div>
 
@@ -1005,66 +1005,107 @@ export default function Home() {
             <div className="mt-4 space-y-4 overflow-x-hidden break-words text-sm leading-relaxed">
               <div className="text-gray-800 dark:text-white/80">
                 <p>
-                  Mercosur News aggregates public RSS headlines across the Mercosur region and presents them in a clean, readable feed.
+                  Mercosur News brings together public RSS headlines from across Uruguay, Argentina, Brazil, Paraguay,
+                  Bolivia, and MercoPress in one clean, easy-to-scan feed.
                 </p>
                 <p className="mt-2">
-                  As you scroll, headlines are translated into English and paired with short English summaries. You can open any source
-                  article via Google Translate to view the full story in English.
+                  The app groups overlapping coverage into a single top story, then translates the headline into English
+                  and generates a short English summary so you can follow regional developments faster.
+                </p>
+                <p className="mt-2">
+                  When you want more detail, use the article button to open the original source through Google
+                  Translate and read the full story in English.
                 </p>
               </div>
 
               <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
-                <div className="font-semibold text-gray-900 dark:text-white">How to use</div>
+                <div className="font-semibold text-gray-900 dark:text-white">What you can do</div>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600 dark:text-gray-400">
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Date Range:</span> filter by recency.
+                    <span className="text-gray-800 dark:text-white/80">Browse by country:</span> switch between
+                    individual Mercosur markets, MercoPress, or the full regional feed.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Select Country:</span> view by country (or all / MercoPress).
+                    <span className="text-gray-800 dark:text-white/80">Filter by date range:</span> focus on the last
+                    24 hours, 3 days, 7 days, or 30 days.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Category:</span> filter the feed by topic.
+                    <span className="text-gray-800 dark:text-white/80">Filter by category:</span> narrow the feed to
+                    topics such as Politics, Economy, World, Environment, Technology, Sports, and more.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Headline Limit:</span> choose how many top stories to load.
+                    <span className="text-gray-800 dark:text-white/80">Adjust headline volume:</span> choose how many
+                    top stories to load in the feed.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Search:</span> filter headlines and summaries.
+                    <span className="text-gray-800 dark:text-white/80">Search in English:</span> quickly find relevant
+                    stories using translated headlines and summaries.
                   </li>
                 </ul>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+                <div className="font-semibold text-gray-900 dark:text-white">How translation works</div>
+                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                  Headlines and summaries are translated into English as stories load, so the feed stays fast,
+                  responsive, and easy to scan. Cards remain muted until English text is ready, so you only see
+                  finished English content.
+                </p>
               </div>
 
               <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
                 <div className="font-semibold text-gray-900 dark:text-white">Add to Home Screen</div>
 
                 {standalone ? (
-                  <div className="mt-2 text-gray-600 dark:text-gray-400">You’re already running Mercosur News in installed mode.</div>
+                  <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
+                    <p>You’re already running Mercosur News in installed mode.</p>
+                    <p>If you reopen it from your home screen or app launcher, it should continue to open as an app.</p>
+                  </div>
                 ) : installEvent ? (
-                  <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="text-gray-600 dark:text-gray-400">Your browser supports installing this app.</div>
+                  <div className="mt-2 space-y-3 text-gray-600 dark:text-gray-400">
+                    <p>Your browser supports installing Mercosur News for a faster, app-like experience.</p>
                     <button
                       onClick={handleInstallClick}
                       className="inline-flex items-center justify-center rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
                     >
                       Install
                     </button>
+                    <p>
+                      If you prefer to do it manually, open your browser menu and look for options such as
+                      “Install app”, “Add to Home screen”, or “Create shortcut”.
+                    </p>
                   </div>
                 ) : ios ? (
-                  <div className="mt-2 text-gray-600 dark:text-gray-400">
-                    On iPhone/iPad: tap Share in Safari, then choose “Add to Home Screen”.
+                  <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
+                    <p>On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.</p>
+                    <p>
+                      If you do not see the option right away, scroll the Share sheet list until “Add to Home Screen”
+                      appears.
+                    </p>
                   </div>
                 ) : (
-                  <div className="mt-2 text-gray-600 dark:text-gray-400">
-                    If you don’t see an Install prompt, the site may not be installable in this browser yet.
+                  <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
+                    <p>
+                      If your browser does not show an install prompt, you can usually add the app manually from the
+                      browser menu.
+                    </p>
+                    <p>
+                      Look for options such as “Install app”, “Add to Home screen”, “Create shortcut”, or “Install
+                      this site as an app”.
+                    </p>
+                    <p>
+                      If you do not see an install prompt, this browser may not currently support app installation for
+                      this site.
+                    </p>
                   </div>
                 )}
               </div>
 
               <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
-                <div className="font-semibold text-gray-900 dark:text-white">Notes</div>
+                <div className="font-semibold text-gray-900 dark:text-white">Why it’s useful</div>
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Topics are automatically labeled. Translation and summarization are generated as stories enter view to keep the feed
-                  responsive.
+                  Mercosur News is designed for readers who want a faster view of regional developments without having
+                  to monitor multiple local-language outlets separately.
                 </p>
               </div>
             </div>
