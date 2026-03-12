@@ -707,7 +707,7 @@ export default function Home() {
 
       <hr className="mb-10 border-gray-200 dark:border-gray-800" />
 
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-3xl font-bold">{selectedCountryName} News</h2>
           {!loading && !loadError ? (
@@ -716,6 +716,10 @@ export default function Home() {
               {freshnessText ? <span>{freshnessText}</span> : null}
             </div>
           ) : null}
+        </div>
+
+        <div className="pt-1 text-sm text-gray-600 dark:text-gray-400 sm:text-right">
+          {loading && !loadError ? "Loading headlines..." : ""}
         </div>
       </div>
 
