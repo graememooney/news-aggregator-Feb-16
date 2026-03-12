@@ -955,200 +955,209 @@ export default function Home() {
   }
 
   const selectedCountryName = MERCOSUR_COUNTRIES.find((c) => c.key === country)?.name || "Uruguay";
-  const installButtonLabel = installEvent ? "Install" : "Add to Home";
+  const installButtonLabel = installEvent ? "Install" : "How to install";
 
   return (
-    <main className="mx-auto max-w-5xl overflow-x-hidden px-4 py-6 sm:p-8">
-      <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="break-words text-5xl font-extrabold leading-tight tracking-tight sm:text-6xl">
-            <span className="text-blue-500">Mercosur</span> News
-          </h1>
-          <p className="mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400 sm:text-base">Your Source for Regional Information</p>
-        </div>
+    <main className="mx-auto max-w-6xl overflow-x-hidden px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
+      <section className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/80 px-5 py-6 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/40 sm:px-7 sm:py-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.10),transparent_32%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.12),transparent_32%)]" />
 
-        <div className="flex flex-wrap items-center gap-2 sm:mt-2 sm:justify-end">
-          <button
-            onClick={() => setInfoOpen(true)}
-            aria-label="Info"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gray-500 bg-transparent text-sm text-blue-500 transition hover:text-blue-400"
-          >
-            <span className="italic font-semibold">i</span>
-          </button>
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <h1 className="break-words text-5xl font-extrabold leading-[0.95] tracking-tight text-gray-950 dark:text-white sm:text-6xl">
+              <span className="text-blue-500">Mercosur</span> News
+            </h1>
 
-          {!standalone ? (
-            <button
-              onClick={handleInstallClick}
-              className="inline-flex min-h-10 items-center rounded-full border border-gray-500 bg-transparent px-4 py-2 text-sm text-black transition hover:opacity-90 dark:text-white"
-              title="Add this app to your home screen"
-            >
-              {installButtonLabel}
-            </button>
-          ) : null}
-
-          <button
-            onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-            className="inline-flex min-h-10 items-center rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
-          >
-            {mounted ? (theme === "dark" ? "Light mode" : "Dark mode") : "Theme"}
-          </button>
-        </div>
-      </div>
-
-      <hr className="mb-10 border-gray-200 dark:border-gray-800" />
-
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-3xl font-bold">{selectedCountryName} News</h2>
-            <button
-              onClick={() => setShareOpen(true)}
-              className="inline-flex items-center rounded-full border border-gray-500 bg-transparent px-3 py-1.5 text-sm text-black transition hover:opacity-90 dark:text-white"
-              title="Share this view"
-            >
-              Share
-            </button>
-            {shareMessage ? <span className="text-sm text-gray-600 dark:text-gray-400">{shareMessage}</span> : null}
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
+              Your Source for English Regional Information
+            </p>
           </div>
 
-          {!loading && !loadError ? (
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
-              <span>{storyCountLabel(filteredClusters.length)}</span>
-              {freshnessText ? <span>{freshnessText}</span> : null}
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <button
+              onClick={() => setInfoOpen(true)}
+              aria-label="Info"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-sm text-blue-600 shadow-sm transition hover:border-blue-300 hover:text-blue-500 dark:border-gray-700 dark:bg-black dark:text-blue-400"
+            >
+              <span className="italic font-semibold">i</span>
+            </button>
+
+            {!standalone ? (
+              <button
+                onClick={handleInstallClick}
+                className="inline-flex min-h-11 items-center rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
+                title={installEvent ? "Install this app" : "View manual install instructions"}
+              >
+                {installButtonLabel}
+              </button>
+            ) : null}
+
+            <button
+              onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+              className="inline-flex min-h-11 items-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+            >
+              {mounted ? (theme === "dark" ? "Light mode" : "Dark mode") : "Theme"}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-200 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-white">{selectedCountryName} News</h2>
+
+              <button
+                onClick={() => setShareOpen(true)}
+                className="inline-flex items-center rounded-full border border-gray-300 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
+                title="Share this view"
+              >
+                Share
+              </button>
+
+              {shareMessage ? <span className="text-sm text-gray-600 dark:text-gray-400">{shareMessage}</span> : null}
             </div>
-          ) : null}
-        </div>
 
-        <div className="pt-1 text-sm text-gray-600 dark:text-gray-400 sm:text-right">
-          {loading && !loadError ? "Loading headlines..." : ""}
-        </div>
-      </div>
-
-      {loadError ? (
-        <div className="mb-6 rounded border border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-white/5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="text-sm text-gray-800 dark:text-white/80">
-              <div className="font-semibold">Service temporarily unavailable</div>
-              <div className="mt-1 text-gray-600 dark:text-gray-400">
-                We couldn’t load headlines right now. Please try again in a moment.
+            {!loading && !loadError ? (
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <span>{storyCountLabel(filteredClusters.length)}</span>
+                {freshnessText ? <span>{freshnessText}</span> : null}
               </div>
-              {typeof loadError.status === "number" && loadError.status ? (
-                <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">Error code: {loadError.status}</div>
-              ) : null}
+            ) : null}
+          </div>
+
+          <div className="pt-1 text-sm font-medium text-gray-500 dark:text-gray-400 lg:text-right">
+            {loading && !loadError ? "Loading headlines..." : ""}
+          </div>
+        </div>
+
+        {loadError ? (
+          <div className="rounded-2xl border border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-white/5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-sm text-gray-800 dark:text-white/80">
+                <div className="font-semibold">Service temporarily unavailable</div>
+                <div className="mt-1 text-gray-600 dark:text-gray-400">
+                  We couldn’t load headlines right now. Please try again in a moment.
+                </div>
+                {typeof loadError.status === "number" && loadError.status ? (
+                  <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">Error code: {loadError.status}</div>
+                ) : null}
+              </div>
+              <button
+                onClick={() => loadTopStories(range, country, headlineLimit)}
+                className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+              >
+                Retry
+              </button>
             </div>
-            <button
-              onClick={() => loadTopStories(range, country, headlineLimit)}
-              className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
-            >
-              Retry
-            </button>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <div className="mb-8 grid grid-cols-1 gap-3 md:grid-cols-15 md:items-end">
-        <div className="md:col-span-3">
-          <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Date Range</label>
-          <select
-            value={range}
-            onChange={(e) => {
-              const val = e.target.value;
-              setRange(val);
-              loadTopStories(val, country, headlineLimit);
-            }}
-            className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-500 dark:bg-gray-900 dark:text-white"
-          >
-            <option value="24h">Last 24 Hours</option>
-            <option value="3d">Last 3 Days</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </select>
-        </div>
-
-        <div className="md:col-span-3">
-          <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Select Country</label>
-          <select
-            value={country}
-            onChange={(e) => {
-              const val = e.target.value as CountryOption["key"];
-              setCountry(val);
-              loadTopStories(range, val, headlineLimit);
-            }}
-            className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-500 dark:bg-gray-900 dark:text-white"
-          >
-            {MERCOSUR_COUNTRIES.map((c) => (
-              <option key={c.key} value={c.key}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-3">
-          <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as CategoryFilter)}
-            className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-500 dark:bg-gray-900 dark:text-white"
-          >
-            <option value="all">All categories</option>
-            {categoryOptions.map((c) => (
-              <option key={c} value={c} disabled={!topicsInData.has(c)}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Headline Limit</label>
-          <select
-            value={headlineLimit}
-            onChange={(e) => {
-              const val = Number(e.target.value) as HeadlineLimit;
-              setHeadlineLimit(val);
-              loadTopStories(range, country, val);
-            }}
-            className="h-10 w-full rounded border border-gray-300 bg-white px-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-500 dark:bg-gray-900 dark:text-white"
-          >
-            {HEADLINE_LIMIT_OPTIONS.map((limit) => (
-              <option key={limit} value={limit}>
-                Top {limit}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-4">
-          <label className="mb-1 block text-sm text-gray-700 dark:text-gray-300">Search</label>
-          <div className="flex items-center gap-3">
-            <input
-              ref={searchInputRef}
-              className="h-10 w-full min-w-0 rounded border border-gray-300 bg-white px-3 text-xs text-black placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
-              placeholder="Headlines & summaries"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  performSearchAction();
-                }
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-15 md:items-end">
+          <div className="md:col-span-3">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
+            <select
+              value={range}
+              onChange={(e) => {
+                const val = e.target.value;
+                setRange(val);
+                loadTopStories(val, country, headlineLimit);
               }}
-            />
-
-            <button
-              className="h-10 shrink-0 rounded border border-gray-300 bg-black px-4 text-white hover:opacity-90 dark:bg-white dark:text-black"
-              onClick={performSearchAction}
-              title="Search (filters as you type)"
+              className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
             >
-              Search
-            </button>
+              <option value="24h">Last 24 Hours</option>
+              <option value="3d">Last 3 Days</option>
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+            </select>
+          </div>
+
+          <div className="md:col-span-3">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Select Country</label>
+            <select
+              value={country}
+              onChange={(e) => {
+                const val = e.target.value as CountryOption["key"];
+                setCountry(val);
+                loadTopStories(range, val, headlineLimit);
+              }}
+              className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              {MERCOSUR_COUNTRIES.map((c) => (
+                <option key={c.key} value={c.key}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-3">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as CategoryFilter)}
+              className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              <option value="all">All categories</option>
+              {categoryOptions.map((c) => (
+                <option key={c} value={c} disabled={!topicsInData.has(c)}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Headline Limit</label>
+            <select
+              value={headlineLimit}
+              onChange={(e) => {
+                const val = Number(e.target.value) as HeadlineLimit;
+                setHeadlineLimit(val);
+                loadTopStories(range, country, val);
+              }}
+              className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              {HEADLINE_LIMIT_OPTIONS.map((limit) => (
+                <option key={limit} value={limit}>
+                  Top {limit}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-4">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+            <div className="flex items-center gap-3">
+              <input
+                ref={searchInputRef}
+                className="h-11 w-full min-w-0 rounded-xl border border-gray-300 bg-white px-3 text-sm text-black shadow-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                placeholder="Headlines & summaries"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    performSearchAction();
+                  }
+                }}
+              />
+
+              <button
+                className="h-11 shrink-0 rounded-xl border border-gray-900 bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                onClick={performSearchAction}
+                title="Search (filters as you type)"
+              >
+                Search
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {showEmptyState ? (
-        <div className="rounded border border-gray-200 bg-gray-50 px-5 py-8 text-center dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="mt-6 rounded-3xl border border-gray-200 bg-gray-50 px-5 py-8 text-center shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No stories match this view</h3>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400">
             Try broadening your search or switching categories to see more coverage from this feed.
@@ -1167,7 +1176,7 @@ export default function Home() {
             <div className="mt-5">
               <button
                 onClick={clearSearchAndCategory}
-                className="inline-flex items-center rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
+                className="inline-flex items-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
               >
                 Reset search and category
               </button>
@@ -1176,7 +1185,7 @@ export default function Home() {
         </div>
       ) : null}
 
-      <div className="space-y-6">
+      <div className="mt-6 space-y-6">
         {filteredClusters.map((c) => {
           const a = c.best_item;
 
@@ -1201,14 +1210,14 @@ export default function Home() {
                 cardRefs.current[a.link] = el;
               }}
               data-link={a.link}
-              className={`rounded border p-5 transition ${
+              className={`rounded-3xl border p-5 shadow-sm transition sm:p-6 ${
                 translatedReady
-                  ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-transparent"
-                  : "border-gray-200 bg-gray-50/70 opacity-70 dark:border-gray-800 dark:bg-white/[0.03]"
+                  ? "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]"
+                  : "border-gray-200 bg-gray-50/80 opacity-70 dark:border-gray-800 dark:bg-white/[0.03]"
               }`}
             >
-              <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-2">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
                   {a.country_flag_url ? <img src={a.country_flag_url} alt="Flag" className="h-4 w-auto rounded-sm" /> : null}
 
                   {showLogo ? (
@@ -1222,7 +1231,7 @@ export default function Home() {
                       }}
                     />
                   ) : (
-                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-gray-200 bg-gray-100 px-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-gray-200 bg-gray-100 px-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
                       {initials(a.source)}
                     </span>
                   )}
@@ -1231,7 +1240,7 @@ export default function Home() {
                 </div>
 
                 {topic ? (
-                  <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2 py-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80">
+                  <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80">
                     {topic}
                   </span>
                 ) : null}
@@ -1239,8 +1248,8 @@ export default function Home() {
 
               {translatedReady ? (
                 <>
-                  <h3 className="text-lg font-semibold">{a.title_en}</h3>
-                  <p className="mt-2 text-gray-800 dark:text-white/80">{a.summary_en}</p>
+                  <h3 className="text-xl font-semibold leading-snug tracking-tight text-gray-950 dark:text-white">{a.title_en}</h3>
+                  <p className="mt-3 text-[15px] leading-7 text-gray-700 dark:text-white/75">{a.summary_en}</p>
                 </>
               ) : st === "error" ? (
                 <>
@@ -1249,7 +1258,7 @@ export default function Home() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{errMsg}</p>
                     <button
                       onClick={() => retryEnrich(a.link)}
-                      className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-500 bg-transparent px-3 py-1.5 text-xs text-black transition hover:opacity-90 dark:text-white"
+                      className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-400 bg-transparent px-3 py-1.5 text-xs font-medium text-black transition hover:opacity-90 dark:border-gray-600 dark:text-white"
                       aria-label="Retry summary enrichment"
                     >
                       Retry
@@ -1264,19 +1273,21 @@ export default function Home() {
                 </div>
               )}
 
-              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">{formatPublishedUTC(a)}</p>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400">{formatPublishedUTC(a)}</p>
 
-              <button
-                onClick={() => openTranslated(a.link)}
-                disabled={!translatedReady}
-                className={`mt-4 inline-flex items-center rounded-full border border-gray-500 px-4 py-2 text-sm transition ${
-                  translatedReady
-                    ? "bg-black text-white hover:opacity-90 dark:bg-white dark:text-black"
-                    : "cursor-not-allowed bg-gray-300 text-gray-600 dark:bg-gray-800 dark:text-gray-500"
-                }`}
-              >
-                Open Translated Article →
-              </button>
+                <button
+                  onClick={() => openTranslated(a.link)}
+                  disabled={!translatedReady}
+                  className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition ${
+                    translatedReady
+                      ? "border-gray-900 bg-gray-900 text-white hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                      : "cursor-not-allowed border-gray-300 bg-gray-300 text-gray-600 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-500"
+                  }`}
+                >
+                  Open Translated Article →
+                </button>
+              </div>
             </div>
           );
         })}
@@ -1284,76 +1295,77 @@ export default function Home() {
 
       {shareOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60" aria-label="Close share modal" onClick={() => setShareOpen(false)} />
-          <div className="relative w-[calc(100vw-2rem)] max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black">
+          <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close share modal" onClick={() => setShareOpen(false)} />
+          <div className="relative w-[calc(100vw-2rem)] max-w-md rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold">Share this view</h3>
+                <h3 className="text-xl font-semibold tracking-tight">Share this view</h3>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Send this feed to another app or copy the link.</p>
               </div>
 
               <button
                 onClick={() => setShareOpen(false)}
-                className="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs hover:opacity-90 dark:border-gray-700"
+                className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
                 aria-label="Close share modal"
               >
                 Close
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 onClick={handleCopyLink}
-                className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-4 text-left text-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
               >
                 <span className="shrink-0">
                   <CopyLinkIcon />
                 </span>
-                <span className="font-medium">Copy link</span>
+                <span>Copy link</span>
               </button>
 
               <button
                 onClick={() => openExternalShare("whatsapp")}
-                className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-4 text-left text-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
               >
                 <span className="shrink-0">
                   <WhatsAppIcon />
                 </span>
-                <span className="font-medium">WhatsApp</span>
+                <span>WhatsApp</span>
               </button>
 
               <button
                 onClick={() => openExternalShare("x")}
-                className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-4 text-left text-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
               >
                 <span className="shrink-0">
                   <XIcon />
                 </span>
-                <span className="font-medium">X</span>
+                <span>X</span>
               </button>
 
               <button
                 onClick={() => openExternalShare("facebook")}
-                className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-4 text-left text-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
               >
                 <span className="shrink-0">
                   <FacebookIcon />
                 </span>
-                <span className="font-medium">Facebook</span>
+                <span>Facebook</span>
               </button>
 
               <button
                 onClick={() => openExternalShare("email")}
-                className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-4 text-left text-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
               >
                 <span className="shrink-0">
                   <EmailIcon />
                 </span>
-                <span className="font-medium">Email</span>
+                <span>Email</span>
               </button>
 
               <button
                 onClick={handleNativeShare}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-4 text-left text-sm transition ${
+                className={`flex items-center gap-3 rounded-2xl border px-4 py-4 text-left text-sm font-medium shadow-sm transition ${
                   canNativeShare
                     ? "border-gray-300 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
                     : "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-500"
@@ -1362,7 +1374,7 @@ export default function Home() {
                 <span className="shrink-0">
                   <MoreAppsIcon />
                 </span>
-                <span className="font-medium">More apps</span>
+                <span>More apps</span>
               </button>
             </div>
           </div>
@@ -1371,11 +1383,11 @@ export default function Home() {
 
       {infoOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60" aria-label="Close" onClick={() => setInfoOpen(false)} />
-          <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-xl overflow-x-hidden overflow-y-auto rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-black">
+          <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close" onClick={() => setInfoOpen(false)} />
+          <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-2xl overflow-x-hidden overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="break-words text-lg font-semibold">About Mercosur News</h3>
+                <h3 className="break-words text-xl font-semibold tracking-tight">About Mercosur News</h3>
                 <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">
                   A mobile-friendly regional intelligence feed for Mercosur headlines, translated into English.
                 </p>
@@ -1383,65 +1395,55 @@ export default function Home() {
 
               <button
                 onClick={() => setInfoOpen(false)}
-                className="shrink-0 rounded border border-gray-300 px-2 py-1 text-xs hover:opacity-90 dark:border-gray-700"
+                className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
                 aria-label="Close modal"
               >
                 Close
               </button>
             </div>
 
-            <div className="mt-4 space-y-4 overflow-x-hidden break-words text-sm leading-relaxed">
+            <div className="mt-5 space-y-5 overflow-x-hidden break-words text-sm leading-relaxed">
               <div className="text-gray-800 dark:text-white/80">
                 <p>
-                  Mercosur News brings together public RSS headlines from across Uruguay, Argentina, Brazil, Paraguay,
-                  Bolivia, and MercoPress in one clean, easy-to-scan feed.
+                  Mercosur News brings together public RSS headlines from across Uruguay, Argentina, Brazil, Paraguay, Bolivia, and MercoPress in one clean, easy-to-scan feed.
                 </p>
                 <p className="mt-2">
-                  The app groups overlapping coverage into a single top story, then translates the headline into English
-                  and generates a short English summary so you can follow regional developments faster.
+                  The app groups overlapping coverage into a single top story, then translates the headline into English and generates a short English summary so you can follow regional developments faster.
                 </p>
                 <p className="mt-2">
-                  When you want more detail, use the article button to open the original source through Google
-                  Translate and read the full story in English.
+                  When you want more detail, use the article button to open the original source through Google Translate and read the full story in English.
                 </p>
               </div>
 
-              <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
                 <div className="font-semibold text-gray-900 dark:text-white">What you can do</div>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600 dark:text-gray-400">
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Browse by country:</span> switch between
-                    individual Mercosur markets, MercoPress, or the full regional feed.
+                    <span className="text-gray-800 dark:text-white/80">Browse by country:</span> switch between individual Mercosur markets, MercoPress, or the full regional feed.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Filter by date range:</span> focus on the last
-                    24 hours, 3 days, 7 days, or 30 days.
+                    <span className="text-gray-800 dark:text-white/80">Filter by date range:</span> focus on the last 24 hours, 3 days, 7 days, or 30 days.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Filter by category:</span> narrow the feed to
-                    topics such as Politics, Economy, World, Environment, Technology, Sports, and more.
+                    <span className="text-gray-800 dark:text-white/80">Filter by category:</span> narrow the feed to topics such as Politics, Economy, World, Environment, Technology, Sports, and more.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Adjust headline volume:</span> choose how many
-                    top stories to load in the feed.
+                    <span className="text-gray-800 dark:text-white/80">Adjust headline volume:</span> choose how many top stories to load in the feed.
                   </li>
                   <li>
-                    <span className="text-gray-800 dark:text-white/80">Search in English:</span> quickly find relevant
-                    stories using translated headlines and summaries.
+                    <span className="text-gray-800 dark:text-white/80">Search in English:</span> quickly find relevant stories using translated headlines and summaries.
                   </li>
                 </ul>
               </div>
 
-              <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
                 <div className="font-semibold text-gray-900 dark:text-white">How translation works</div>
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Headlines and summaries are translated into English as stories load, so the feed stays fast,
-                  responsive, and easy to scan. Cards remain muted until English text is ready, so you only see
-                  finished English content.
+                  Headlines and summaries are translated into English as stories load, so the feed stays fast, responsive, and easy to scan. Cards remain muted until English text is ready, so you only see finished English content.
                 </p>
               </div>
 
-              <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
                 <div className="font-semibold text-gray-900 dark:text-white">Add to Home Screen</div>
 
                 {standalone ? (
@@ -1454,46 +1456,32 @@ export default function Home() {
                     <p>Your browser supports installing Mercosur News for a faster, app-like experience.</p>
                     <button
                       onClick={handleInstallClick}
-                      className="inline-flex items-center justify-center rounded-full border border-gray-500 bg-black px-4 py-2 text-sm text-white transition hover:opacity-90 dark:bg-white dark:text-black"
+                      className="inline-flex items-center justify-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
                     >
                       Install
                     </button>
                     <p>
-                      If you prefer to do it manually, open your browser menu and look for options such as
-                      “Install app”, “Add to Home screen”, or “Create shortcut”.
+                      If you prefer to do it manually, open your browser menu and look for options such as “Install app”, “Add to Home screen”, or “Create shortcut”.
                     </p>
                   </div>
                 ) : ios ? (
                   <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
                     <p>On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.</p>
-                    <p>
-                      If you do not see the option right away, scroll the Share sheet list until “Add to Home Screen”
-                      appears.
-                    </p>
+                    <p>If you do not see the option right away, scroll the Share sheet list until “Add to Home Screen” appears.</p>
                   </div>
                 ) : (
                   <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
-                    <p>
-                      If your browser does not show an install prompt, you can usually add the app manually from the
-                      browser menu.
-                    </p>
-                    <p>
-                      Look for options such as “Install app”, “Add to Home screen”, “Create shortcut”, or “Install
-                      this site as an app”.
-                    </p>
-                    <p>
-                      If you do not see an install prompt, this browser may not currently support app installation for
-                      this site.
-                    </p>
+                    <p>If your browser does not show an install prompt, you can usually add the app manually from the browser menu.</p>
+                    <p>Look for options such as “Install app”, “Add to Home screen”, “Create shortcut”, or “Install this site as an app”.</p>
+                    <p>If you do not see an install prompt, this browser may not currently support app installation for this site.</p>
                   </div>
                 )}
               </div>
 
-              <div className="border-t border-gray-200 pt-4 dark:border-gray-800">
+              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
                 <div className="font-semibold text-gray-900 dark:text-white">Why it’s useful</div>
                 <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Mercosur News is designed for readers who want a faster view of regional developments without having
-                  to monitor multiple local-language outlets separately.
+                  Mercosur News is designed for readers who want a faster view of regional developments without having to monitor multiple local-language outlets separately.
                 </p>
               </div>
             </div>
