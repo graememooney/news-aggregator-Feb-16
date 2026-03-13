@@ -1156,6 +1156,31 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="mt-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-black/40 dark:to-amber-500/10">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <div className="inline-flex items-center rounded-full border border-amber-300 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-white/5 dark:text-amber-300">
+              Upgrade
+            </div>
+            <h3 className="mt-3 text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
+              Subscribe and keep the app ad free
+            </h3>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+              Enjoy a cleaner reading experience while supporting the continued growth of Mercosur News.
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            <button
+              className="inline-flex min-h-11 items-center rounded-full border border-gray-900 bg-gray-900 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+              type="button"
+            >
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </section>
+
       {showEmptyState ? (
         <div className="mt-6 rounded-3xl border border-gray-200 bg-gray-50 px-5 py-8 text-center shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No stories match this view</h3>
