@@ -117,6 +117,10 @@ const DEFAULT_CATEGORY: CategoryFilter = "all";
 const DEFAULT_HEADLINE_LIMIT: HeadlineLimit = 30;
 const DEFAULT_QUERY = "";
 
+const APP_NAME = "Regional Pulse News";
+const APP_TAGLINE = "Your Source for English Regional Intelligence";
+const BRAND_LOGO_PATH = "/branding/regional-pulse-logo.png";
+
 type ShareNavigator = Navigator & {
   share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
 };
@@ -640,7 +644,7 @@ export default function Home() {
 
       try {
         await nav.share({
-          title: "Mercosur News",
+          title: APP_NAME,
           text: `View this ${selectedRegionName} feed`,
           url,
         });
@@ -1200,15 +1204,29 @@ export default function Home() {
       <section className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/80 px-5 py-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/40 sm:px-7 sm:py-7">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.10),transparent_32%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.12),transparent_32%)]" />
 
-        <div className="relative flex flex-col gap-3">
-          <h1 className="break-words text-[3.35rem] font-extrabold leading-[0.92] tracking-tight text-gray-950 dark:text-white sm:text-6xl">
-            <span className="text-blue-500">{selectedRegionName}</span> News
-          </h1>
+        <div className="pointer-events-none absolute right-[-40px] top-[-30px] hidden h-52 w-52 opacity-[0.10] md:block">
+          <img src={BRAND_LOGO_PATH} alt="" className="h-full w-full object-contain" />
+        </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
-              Your Source for English Regional Information
-            </p>
+        <div className="relative flex flex-col gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-black sm:h-16 sm:w-16">
+                  <img src={BRAND_LOGO_PATH} alt={APP_NAME} className="h-full w-full object-cover" />
+                </div>
+
+                <div className="min-w-0">
+                  <h1 className="break-words text-[2.4rem] font-extrabold leading-[0.92] tracking-tight text-gray-950 dark:text-white sm:text-6xl">
+                    <span className="text-blue-500">Regional Pulse</span> News
+                  </h1>
+                </div>
+              </div>
+
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
+                {APP_TAGLINE}
+              </p>
+            </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
               <button
@@ -1733,7 +1751,7 @@ export default function Home() {
           <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-2xl overflow-x-hidden overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h3 className="break-words text-xl font-semibold tracking-tight">About {selectedRegionName} News</h3>
+                <h3 className="break-words text-xl font-semibold tracking-tight">About {APP_NAME}</h3>
                 <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">
                   A mobile-friendly regional intelligence feed, translated into English.
                 </p>
