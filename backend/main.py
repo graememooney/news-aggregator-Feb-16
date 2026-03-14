@@ -42,25 +42,47 @@ app.add_middleware(
 # ----------------------------
 # Regions / source config
 # ----------------------------
-REGIONS_META: Dict[str, Dict[str, Any]] = {
+REGIONS: Dict[str, Dict[str, Any]] = {
     "mercosur": {
         "key": "mercosur",
         "name": "Mercosur",
         "status": "live",
+        "default_country": "uy",
+        "aliases": ["mercosur"],
+        "countries": {
+            "all": {"code": "ALL", "name": "All Mercosur", "flag_url": ""},
+            "mp": {"code": "MP", "name": "MercoPress", "flag_url": ""},
+            "uy": {"code": "UY", "name": "Uruguay", "flag_url": "https://flagcdn.com/w40/uy.png"},
+            "ar": {"code": "AR", "name": "Argentina", "flag_url": "https://flagcdn.com/w40/ar.png"},
+            "br": {"code": "BR", "name": "Brazil", "flag_url": "https://flagcdn.com/w40/br.png"},
+            "py": {"code": "PY", "name": "Paraguay", "flag_url": "https://flagcdn.com/w40/py.png"},
+            "bo": {"code": "BO", "name": "Bolivia", "flag_url": "https://flagcdn.com/w40/bo.png"},
+        },
     },
     "mexico": {
         "key": "mexico",
         "name": "Mexico",
         "status": "coming-soon",
+        "default_country": "mx",
+        "aliases": ["mexico", "mx"],
+        "countries": {
+            "mx": {"code": "MX", "name": "Mexico", "flag_url": "https://flagcdn.com/w40/mx.png"},
+        },
     },
     "central-america": {
         "key": "central-america",
         "name": "Central America",
         "status": "coming-soon",
+        "default_country": "all",
+        "aliases": ["central-america", "central", "central_america", "centralamerica"],
+        "countries": {
+            "all": {"code": "ALL", "name": "All Central America", "flag_url": ""},
+        },
     },
 }
 
 # Mercosur bloc (requested): UY, AR, BR, PY, BO + MercoPress ("mp") + "all"
+# Keep SOURCES as the master feed list. Additional regions can be appended here later.
 SOURCES: List[Dict[str, Any]] = [
     # --- Uruguay (UY) ---
     {
@@ -180,26 +202,16 @@ SOURCES: List[Dict[str, Any]] = [
     },
 ]
 
-REGION_COUNTRY_META: Dict[str, Dict[str, Dict[str, str]]] = {
-    "mercosur": {
-        "all": {"code": "ALL", "name": "All Mercosur", "flag_url": ""},
-        "mp": {"code": "MP", "name": "MercoPress", "flag_url": ""},
-        "uy": {"code": "UY", "name": "Uruguay", "flag_url": "https://flagcdn.com/w40/uy.png"},
-        "ar": {"code": "AR", "name": "Argentina", "flag_url": "https://flagcdn.com/w40/ar.png"},
-        "br": {"code": "BR", "name": "Brazil", "flag_url": "https://flagcdn.com/w40/br.png"},
-        "py": {"code": "PY", "name": "Paraguay", "flag_url": "https://flagcdn.com/w40/py.png"},
-        "bo": {"code": "BO", "name": "Bolivia", "flag_url": "https://flagcdn.com/w40/bo.png"},
-    },
-    "mexico": {
-        "mx": {"code": "MX", "name": "Mexico", "flag_url": "https://flagcdn.com/w40/mx.png"},
-    },
-    "central-america": {
-        "all": {"code": "ALL", "name": "All Central America", "flag_url": ""},
-    },
-}
-
-LIVE_REGION_KEYS = {k for k, v in REGIONS_META.items() if v.get("status") == "live"}
 DEFAULT_REGION_KEY = "mercosur"
+LIVE_REGION_KEYS = {k for k, v in REGIONS.items() if v.get("status") == "live"}
+
+REGION_ALIASES: Dict[str, str] = {}
+for region_key, region_cfg in REGIONS.items():
+    REGION_ALIASES[region_key] = region_key
+    for alias in (region_cfg.get("aliases") or []):
+        ak = (alias or "").strip().lower()
+        if ak:
+            REGION_ALIASES[ak] = region_key
 
 # ----------------------------
 # SQLite cache
@@ -361,12 +373,17 @@ def _strip_internal_fields(obj: Any) -> Any:
 
 
 def _normalize_region(region: Optional[str]) -> str:
-    r = (region or DEFAULT_REGION_KEY).strip().lower()
-    if not r:
-        r = DEFAULT_REGION_KEY
-    if r not in REGIONS_META:
-        raise HTTPException(status_code=400, detail=f"Invalid region. Use one of: {','.join(REGIONS_META.keys())}")
-    return r
+    raw = (region or DEFAULT_REGION_KEY).strip().lower()
+    if not raw:
+        raw = DEFAULT_REGION_KEY
+
+    resolved = REGION_ALIASES.get(raw)
+    if not resolved or resolved not in REGIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid region. Use one of: {','.join(REGIONS.keys())}",
+        )
+    return resolved
 
 
 def _require_live_region(region: str) -> str:
@@ -376,23 +393,50 @@ def _require_live_region(region: str) -> str:
     return r
 
 
-def _valid_country_keys_for_region(region: str) -> set:
+def _region_cfg(region: str) -> Dict[str, Any]:
     r = _normalize_region(region)
-    meta = REGION_COUNTRY_META.get(r) or {}
-    keys = set(meta.keys())
-    if r == "mercosur":
-        keys.update({"all", "mp", "uy", "ar", "br", "py", "bo"})
-    return keys
+    cfg = REGIONS.get(r)
+    if not cfg:
+        raise HTTPException(status_code=400, detail=f"Invalid region '{r}'.")
+    return cfg
+
+
+def _region_country_meta(region: str) -> Dict[str, Dict[str, str]]:
+    cfg = _region_cfg(region)
+    return cfg.get("countries") or {}
+
+
+def _valid_country_keys_for_region(region: str) -> set:
+    meta = _region_country_meta(region)
+    return set(meta.keys())
+
+
+def _default_country_for_region(region: str) -> str:
+    cfg = _region_cfg(region)
+    default_country = (cfg.get("default_country") or "").strip().lower()
+    valid = _valid_country_keys_for_region(region)
+    if default_country and default_country in valid:
+        return default_country
+    if valid:
+        return sorted(valid)[0]
+    return ""
 
 
 def _normalize_country_for_region(region: str, country: Optional[str]) -> str:
     r = _require_live_region(region)
-    c = (country or "uy").strip().lower() if r == "mercosur" else (country or "").strip().lower()
-    if r == "mercosur" and not c:
-        c = "uy"
-    if c not in _valid_country_keys_for_region(r):
+    raw = (country or "").strip().lower()
+    if not raw:
+        raw = _default_country_for_region(r)
+
+    valid = _valid_country_keys_for_region(r)
+    if raw not in valid:
         raise HTTPException(status_code=400, detail=f"Invalid country for region '{r}'.")
-    return c
+    return raw
+
+
+def _sources_for_region(region: str) -> List[Dict[str, Any]]:
+    r = _normalize_region(region)
+    return [s for s in SOURCES if (s.get("region_key") or "").strip().lower() == r]
 
 
 # ----------------------------
@@ -2262,14 +2306,15 @@ def healthz():
 @app.get("/regions")
 def get_regions():
     regions = []
-    for key in ["mercosur", "mexico", "central-america"]:
-        meta = REGIONS_META[key]
+    for key, meta in REGIONS.items():
         source_count = sum(1 for s in SOURCES if (s.get("region_key") or "").lower() == key)
         regions.append(
             {
                 "key": meta["key"],
                 "name": meta["name"],
                 "status": meta["status"],
+                "default_country": meta.get("default_country"),
+                "countries_count": len(meta.get("countries") or {}),
                 "source_count": source_count,
             }
         )
@@ -2279,7 +2324,7 @@ def get_regions():
 @app.get("/countries")
 def get_countries(region: str = DEFAULT_REGION_KEY):
     r = _normalize_region(region)
-    meta = REGION_COUNTRY_META.get(r) or {}
+    meta = _region_country_meta(r)
 
     counts: Dict[str, int] = {k: 0 for k in meta.keys()}
     for s in SOURCES:
@@ -2289,9 +2334,6 @@ def get_countries(region: str = DEFAULT_REGION_KEY):
         ck = (s.get("country_key") or "").lower()
         if ck in counts:
             counts[ck] += 1
-
-    if r == "mercosur":
-        counts["all"] = sum(1 for s in SOURCES if (s.get("region_key") or "").lower() == "mercosur")
 
     countries = []
     for key, info in meta.items():
@@ -2371,12 +2413,8 @@ def _collect_items(region: str, country: str, range: str, q: str, scan_cap: int 
 
     items: List[Dict[str, Any]] = []
 
-    for source in SOURCES:
-        source_region = (source.get("region_key") or "").lower()
+    for source in _sources_for_region(r):
         ck = (source.get("country_key") or "").lower()
-
-        if source_region != r:
-            continue
 
         if r == "mercosur":
             if c == "all":
@@ -2914,7 +2952,12 @@ def _worker_loop() -> None:
             total_enriched = 0
             total_queued = 0
 
-            for region_key in regions:
+            for region_key_raw in regions:
+                try:
+                    region_key = _normalize_region(region_key_raw)
+                except Exception:
+                    continue
+
                 if region_key not in LIVE_REGION_KEYS:
                     continue
 
@@ -2923,6 +2966,9 @@ def _worker_loop() -> None:
                     region_countries = [k for k in countries if k in _valid_country_keys_for_region(region_key)]
 
                 for c in region_countries:
+                    if c not in _valid_country_keys_for_region(region_key):
+                        continue
+
                     for r in ranges:
                         bucket_key = f"{region_key}:{c}:{r}"
                         bucket_scanned = 0
@@ -3000,7 +3046,7 @@ def _worker_loop() -> None:
 
                         if candidates:
                             for i in range(0, len(candidates), max(1, batch_size)):
-                                chunk = candidates[i : i + max(1, batch_size)]
+                                chunk = candidates[i: i + max(1, batch_size)]
                                 ecount = _enrich_internal_clusters(chunk)
                                 bucket_enriched += ecount
                                 total_enriched += ecount
