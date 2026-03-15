@@ -119,7 +119,7 @@ const DEFAULT_QUERY = "";
 
 const APP_NAME = "Regional Pulse News";
 const APP_TAGLINE = "Your Source for English Regional Intelligence";
-const BRAND_LOGO_PATH = "/branding/regional-pulse-logo.png";
+const BRAND_LOGO_PATH = "/regional-pulse-logo.png";
 
 type ShareNavigator = Navigator & {
   share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
