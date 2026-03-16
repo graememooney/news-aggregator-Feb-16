@@ -435,8 +435,7 @@ function defaultSubdivisionForRegion(regionKey: string, regions: RegionOption[],
     regions.find((r) => r.key === regionKey)?.default_subdivision ||
     regions.find((r) => r.key === regionKey)?.default_country ||
     ""
-  )
-    .trim();
+  ).trim();
 
   if (fromRegion && subdivisions.some((c) => c.key === fromRegion)) return fromRegion;
   if (subdivisions.length > 0) return subdivisions[0].key;
@@ -653,6 +652,35 @@ export default function Home() {
     setQuery("");
 
     loadTopStories(nextRegion, nextRange, nextSubdivision, nextHeadlineLimit);
+  }
+
+  async function selectRegionHomepage(nextRegion: string) {
+    const option = regionOptionsForUi.find((r) => r.key === nextRegion);
+    if (!option) return;
+
+    if (option.status !== "live") {
+      showComingSoon(`${option.name} is coming soon.`);
+      return;
+    }
+
+    const nextRange = DEFAULT_RANGE;
+    const nextCategory = DEFAULT_CATEGORY;
+    const nextHeadlineLimit = DEFAULT_HEADLINE_LIMIT;
+    const nextQuery = "";
+
+    setRegion(nextRegion);
+    setRange(nextRange);
+    setCategory(nextCategory);
+    setHeadlineLimit(nextHeadlineLimit);
+    setQuery(nextQuery);
+
+    const nextSubdivisions = await fetchSubdivisionsForRegion(nextRegion);
+    setSubdivisionsData(nextSubdivisions);
+
+    const nextSubdivision = defaultSubdivisionForRegion(nextRegion, regionOptionsForUi, nextSubdivisions);
+    setSubdivision(nextSubdivision);
+
+    await loadTopStories(nextRegion, nextRange, nextSubdivision, nextHeadlineLimit);
   }
 
   function showShareFeedback(message: string) {
@@ -1350,6 +1378,59 @@ export default function Home() {
 
       <section className="mt-5 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
         <div className="flex flex-col gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-gray-950 dark:text-white sm:text-lg">Choose your region</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              Stay on one homepage and switch editions instantly.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {regionOptionsForUi.map((regionOption) => {
+              const isSelected = regionOption.key === region;
+              const isLive = regionOption.status === "live";
+
+              return (
+                <button
+                  key={regionOption.key}
+                  type="button"
+                  onClick={() => void selectRegionHomepage(regionOption.key)}
+                  className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-base font-semibold tracking-tight text-gray-950 dark:text-white">
+                      {regionOption.name}
+                    </span>
+
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+                        isLive
+                          ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
+                          : "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+                      }`}
+                    >
+                      {isLive ? "Live" : "Coming Soon"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {comingSoonMessage ? (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+              {comingSoonMessage}
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      <section className="mt-5 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <div className="flex-1">
               <label className="sr-only">Search</label>
@@ -1414,12 +1495,6 @@ export default function Home() {
                   Limit: Top {headlineLimit}
                 </span>
               ) : null}
-            </div>
-          ) : null}
-
-          {comingSoonMessage ? (
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
-              {comingSoonMessage}
             </div>
           ) : null}
         </div>
