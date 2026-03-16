@@ -41,15 +41,22 @@ app.add_middleware(
 
 # ----------------------------
 # Regions / source config
+# Canonical model:
+#   region -> subdivision
+#
+# Transitional compatibility:
+#   "country" remains accepted for Mercosur and existing frontend calls.
 # ----------------------------
 REGIONS: Dict[str, Dict[str, Any]] = {
     "mercosur": {
         "key": "mercosur",
         "name": "Mercosur",
         "status": "live",
-        "default_country": "uy",
+        "subdivision_label": "Country",
+        "default_subdivision": "uy",
+        "default_country": "uy",  # backward compatibility
         "aliases": ["mercosur"],
-        "countries": {
+        "subdivisions": {
             "all": {"code": "ALL", "name": "All Mercosur", "flag_url": ""},
             "mp": {"code": "MP", "name": "MercoPress", "flag_url": ""},
             "uy": {"code": "UY", "name": "Uruguay", "flag_url": "https://flagcdn.com/w40/uy.png"},
@@ -63,9 +70,11 @@ REGIONS: Dict[str, Dict[str, Any]] = {
         "key": "mexico",
         "name": "Mexico",
         "status": "coming-soon",
-        "default_country": "mx",
+        "subdivision_label": "State",
+        "default_subdivision": "mx",
+        "default_country": "mx",  # transitional compatibility only
         "aliases": ["mexico", "mx"],
-        "countries": {
+        "subdivisions": {
             "mx": {"code": "MX", "name": "Mexico", "flag_url": "https://flagcdn.com/w40/mx.png"},
         },
     },
@@ -73,9 +82,11 @@ REGIONS: Dict[str, Dict[str, Any]] = {
         "key": "central-america",
         "name": "Central America",
         "status": "coming-soon",
-        "default_country": "all",
+        "subdivision_label": "Country",
+        "default_subdivision": "all",
+        "default_country": "all",  # transitional compatibility only
         "aliases": ["central-america", "central", "central_america", "centralamerica"],
-        "countries": {
+        "subdivisions": {
             "all": {"code": "ALL", "name": "All Central America", "flag_url": ""},
         },
     },
@@ -89,9 +100,12 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "montevideo_portal",
         "name": "Montevideo Portal",
         "region_key": "mercosur",
-        "country_key": "uy",
-        "country_code": "UY",
-        "country_flag_url": "https://flagcdn.com/w40/uy.png",
+        "subdivision_key": "uy",
+        "country_key": "uy",  # backward compatibility
+        "subdivision_code": "UY",
+        "country_code": "UY",  # backward compatibility
+        "subdivision_flag_url": "https://flagcdn.com/w40/uy.png",
+        "country_flag_url": "https://flagcdn.com/w40/uy.png",  # backward compatibility
         "source_logo": "https://www.montevideo.com.uy/favicon.ico",
         "feed_url": "https://www.montevideo.com.uy/anxml.aspx?59",
     },
@@ -99,8 +113,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "el_observador_uy",
         "name": "El Observador (UY)",
         "region_key": "mercosur",
+        "subdivision_key": "uy",
         "country_key": "uy",
+        "subdivision_code": "UY",
         "country_code": "UY",
+        "subdivision_flag_url": "https://flagcdn.com/w40/uy.png",
         "country_flag_url": "https://flagcdn.com/w40/uy.png",
         "source_logo": "https://www.elobservador.com.uy/favicon.ico",
         "feed_url": "https://www.elobservador.com.uy/rss/pages/home.xml",
@@ -110,8 +127,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "lanacion_ar",
         "name": "La Nación (AR)",
         "region_key": "mercosur",
+        "subdivision_key": "ar",
         "country_key": "ar",
+        "subdivision_code": "AR",
         "country_code": "AR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/ar.png",
         "country_flag_url": "https://flagcdn.com/w40/ar.png",
         "source_logo": "https://www.lanacion.com.ar/favicon.ico",
         "feed_url": "https://www.lanacion.com.ar/arc/outboundfeeds/rss/?outputType=xml",
@@ -120,8 +140,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "clarin_ar_lo_ultimo",
         "name": "Clarín (AR) - Lo Último",
         "region_key": "mercosur",
+        "subdivision_key": "ar",
         "country_key": "ar",
+        "subdivision_code": "AR",
         "country_code": "AR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/ar.png",
         "country_flag_url": "https://flagcdn.com/w40/ar.png",
         "source_logo": "https://www.clarin.com/favicon.ico",
         "feed_url": "https://www.clarin.com/rss/lo-ultimo/",
@@ -131,8 +154,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "g1_br",
         "name": "G1 (BR)",
         "region_key": "mercosur",
+        "subdivision_key": "br",
         "country_key": "br",
+        "subdivision_code": "BR",
         "country_code": "BR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/br.png",
         "country_flag_url": "https://flagcdn.com/w40/br.png",
         "source_logo": "https://g1.globo.com/favicon.ico",
         "feed_url": "https://g1.globo.com/rss/g1/",
@@ -141,8 +167,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "uol_br",
         "name": "UOL (BR)",
         "region_key": "mercosur",
+        "subdivision_key": "br",
         "country_key": "br",
+        "subdivision_code": "BR",
         "country_code": "BR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/br.png",
         "country_flag_url": "https://flagcdn.com/w40/br.png",
         "source_logo": "https://www.uol.com.br/favicon.ico",
         "feed_url": "https://rss.uol.com.br/feed/noticias.xml",
@@ -152,8 +181,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "abccolor_py",
         "name": "ABC Color (PY)",
         "region_key": "mercosur",
+        "subdivision_key": "py",
         "country_key": "py",
+        "subdivision_code": "PY",
         "country_code": "PY",
+        "subdivision_flag_url": "https://flagcdn.com/w40/py.png",
         "country_flag_url": "https://flagcdn.com/w40/py.png",
         "source_logo": "https://www.abc.com.py/favicon.ico",
         "feed_url": "https://www.abc.com.py/arc/outboundfeeds/rss/nacionales/",
@@ -163,8 +195,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "radiofides_bo",
         "name": "Radio Fides (BO)",
         "region_key": "mercosur",
+        "subdivision_key": "bo",
         "country_key": "bo",
+        "subdivision_code": "BO",
         "country_code": "BO",
+        "subdivision_flag_url": "https://flagcdn.com/w40/bo.png",
         "country_flag_url": "https://flagcdn.com/w40/bo.png",
         "source_logo": "https://radiofides.com/es/favicon.ico",
         "feed_url": "https://radiofides.com/es/feed/",
@@ -173,8 +208,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "radiofides_bo_nacional",
         "name": "Radio Fides - Nacional (BO)",
         "region_key": "mercosur",
+        "subdivision_key": "bo",
         "country_key": "bo",
+        "subdivision_code": "BO",
         "country_code": "BO",
+        "subdivision_flag_url": "https://flagcdn.com/w40/bo.png",
         "country_flag_url": "https://flagcdn.com/w40/bo.png",
         "source_logo": "https://radiofides.com/es/favicon.ico",
         "feed_url": "https://radiofides.com/es/category/nacional/feed/",
@@ -183,8 +221,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "lapatria_bo",
         "name": "La Patria (BO)",
         "region_key": "mercosur",
+        "subdivision_key": "bo",
         "country_key": "bo",
+        "subdivision_code": "BO",
         "country_code": "BO",
+        "subdivision_flag_url": "https://flagcdn.com/w40/bo.png",
         "country_flag_url": "https://flagcdn.com/w40/bo.png",
         "source_logo": "https://lapatria.bo/favicon.ico",
         "feed_url": "https://lapatria.bo/feed/",
@@ -194,8 +235,11 @@ SOURCES: List[Dict[str, Any]] = [
         "id": "mercopress_mercosur",
         "name": "MercoPress (Mercosur)",
         "region_key": "mercosur",
+        "subdivision_key": "mp",
         "country_key": "mp",
+        "subdivision_code": "MP",
         "country_code": "MP",
+        "subdivision_flag_url": None,
         "country_flag_url": None,
         "source_logo": "https://en.mercopress.com/favicon.ico",
         "feed_url": "https://en.mercopress.com/rss/mercosur",
@@ -401,37 +445,82 @@ def _region_cfg(region: str) -> Dict[str, Any]:
     return cfg
 
 
-def _region_country_meta(region: str) -> Dict[str, Dict[str, str]]:
+def _region_subdivision_label(region: str) -> str:
     cfg = _region_cfg(region)
-    return cfg.get("countries") or {}
+    return str(cfg.get("subdivision_label") or "Subdivision")
 
 
-def _valid_country_keys_for_region(region: str) -> set:
-    meta = _region_country_meta(region)
+def _region_subdivision_meta(region: str) -> Dict[str, Dict[str, str]]:
+    cfg = _region_cfg(region)
+    subdivisions = cfg.get("subdivisions") or {}
+    if subdivisions:
+        return subdivisions
+
+    countries = cfg.get("countries") or {}
+    return countries
+
+
+def _region_country_meta(region: str) -> Dict[str, Dict[str, str]]:
+    # Backward compatibility wrapper
+    return _region_subdivision_meta(region)
+
+
+def _valid_subdivision_keys_for_region(region: str) -> set:
+    meta = _region_subdivision_meta(region)
     return set(meta.keys())
 
 
-def _default_country_for_region(region: str) -> str:
+def _valid_country_keys_for_region(region: str) -> set:
+    # Backward compatibility wrapper
+    return _valid_subdivision_keys_for_region(region)
+
+
+def _default_subdivision_for_region(region: str) -> str:
     cfg = _region_cfg(region)
+    default_subdivision = (cfg.get("default_subdivision") or "").strip().lower()
+    valid = _valid_subdivision_keys_for_region(region)
+    if default_subdivision and default_subdivision in valid:
+        return default_subdivision
+
     default_country = (cfg.get("default_country") or "").strip().lower()
-    valid = _valid_country_keys_for_region(region)
     if default_country and default_country in valid:
         return default_country
+
     if valid:
         return sorted(valid)[0]
     return ""
 
 
-def _normalize_country_for_region(region: str, country: Optional[str]) -> str:
-    r = _require_live_region(region)
-    raw = (country or "").strip().lower()
-    if not raw:
-        raw = _default_country_for_region(r)
+def _default_country_for_region(region: str) -> str:
+    # Backward compatibility wrapper
+    return _default_subdivision_for_region(region)
 
-    valid = _valid_country_keys_for_region(r)
+
+def _normalize_subdivision_for_region(region: str, subdivision: Optional[str]) -> str:
+    r = _require_live_region(region)
+    raw = (subdivision or "").strip().lower()
+    if not raw:
+        raw = _default_subdivision_for_region(r)
+
+    valid = _valid_subdivision_keys_for_region(r)
     if raw not in valid:
-        raise HTTPException(status_code=400, detail=f"Invalid country for region '{r}'.")
+        raise HTTPException(status_code=400, detail=f"Invalid subdivision for region '{r}'.")
     return raw
+
+
+def _normalize_country_for_region(region: str, country: Optional[str]) -> str:
+    # Backward compatibility wrapper
+    return _normalize_subdivision_for_region(region, country)
+
+
+def _resolve_subdivision_param(subdivision: Optional[str], country: Optional[str]) -> Optional[str]:
+    raw_subdivision = (subdivision or "").strip()
+    if raw_subdivision:
+        return raw_subdivision
+    raw_country = (country or "").strip()
+    if raw_country:
+        return raw_country
+    return None
 
 
 def _sources_for_region(region: str) -> List[Dict[str, Any]]:
@@ -634,13 +723,13 @@ def _top_cache_max_rows() -> int:
         return 300
 
 
-def _top_cache_key(region: str, country: str, range: str, q: str, limit: int) -> str:
+def _top_cache_key(region: str, subdivision: str, range: str, q: str, limit: int) -> str:
     rg = (region or "").strip().lower()
-    c = (country or "").strip().lower()
+    sd = (subdivision or "").strip().lower()
     r = (range or "").strip().lower()
     qq = (q or "").strip().lower()
     lim = int(limit)
-    return f"top|region={rg}|country={c}|range={r}|q={qq}|limit={lim}"
+    return f"top|region={rg}|subdivision={sd}|range={r}|q={qq}|limit={lim}"
 
 
 def _top_cache_get(cache_key: str) -> Optional[Tuple[Dict[str, Any], int]]:
@@ -1194,9 +1283,12 @@ def _build_article(source: Dict[str, Any], entry: Dict[str, Any]) -> Optional[Di
         "published_utc": published_utc,
         "source": source["name"],
         "region_key": source.get("region_key"),
-        "country_key": source.get("country_key"),
-        "country_code": source.get("country_code"),
-        "country_flag_url": source.get("country_flag_url"),
+        "subdivision_key": source.get("subdivision_key") or source.get("country_key"),
+        "country_key": source.get("country_key") or source.get("subdivision_key"),  # compatibility
+        "subdivision_code": source.get("subdivision_code") or source.get("country_code"),
+        "country_code": source.get("country_code") or source.get("subdivision_code"),  # compatibility
+        "subdivision_flag_url": source.get("subdivision_flag_url") or source.get("country_flag_url"),
+        "country_flag_url": source.get("country_flag_url") or source.get("subdivision_flag_url"),  # compatibility
         "source_logo": source.get("source_logo"),
         "snippet_text": snippet_text,
         "has_cached_summary": False,
@@ -1239,10 +1331,10 @@ def _day_bucket(published_utc: Optional[str]) -> str:
 
 
 def _sig(article: Dict[str, Any]) -> str:
-    ck = (article.get("country_key") or "").lower() or "x"
+    sk = (article.get("subdivision_key") or article.get("country_key") or "").lower() or "x"
     day = _day_bucket(article.get("published_utc"))
     nt = _norm_title(article.get("title") or "")
-    raw = f"{ck}|{day}|{nt[:180]}"
+    raw = f"{sk}|{day}|{nt[:180]}"
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()
 
 
@@ -1388,20 +1480,20 @@ def _jaccard(a: List[str], b: List[str]) -> float:
 
 
 def _cluster_bucket_key(article: Dict[str, Any]) -> str:
-    ck = (article.get("country_key") or "").strip().lower() or "x"
+    sk = (article.get("subdivision_key") or article.get("country_key") or "").strip().lower() or "x"
     day = _day_bucket(article.get("published_utc"))
     kws = _top_keywords(article, max_k=6)
     kw_part = "|".join(sorted(kws))[:220]
-    raw = f"{ck}|{day}|{kw_part}"
+    raw = f"{sk}|{day}|{kw_part}"
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()
 
 
-def _cluster_id_v2(country_key: str, day: str, keywords: List[str], entities: List[str]) -> str:
-    ck = (country_key or "x").strip().lower()
+def _cluster_id_v2(subdivision_key: str, day: str, keywords: List[str], entities: List[str]) -> str:
+    sk = (subdivision_key or "x").strip().lower()
     dy = (day or "unknown").strip().lower()
     kw_part = "|".join(sorted(keywords or []))[:240]
     ent_part = "|".join((entities or [])[:2])[:120]
-    raw = f"v2|{ck}|{dy}|{kw_part}|{ent_part}"
+    raw = f"v2|{sk}|{dy}|{kw_part}|{ent_part}"
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()
 
 
@@ -1484,11 +1576,11 @@ def _cluster_items_v2(raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                     if float(it.get("rank_score") or 0.0) > float(best.get("rank_score") or 0.0):
                         best = it
 
-            ck = (best.get("country_key") or "").strip().lower() or "x"
+            sk = (best.get("subdivision_key") or best.get("country_key") or "").strip().lower() or "x"
             dy = _day_bucket(best.get("published_utc"))
             rep_keywords = _top_keywords(best, max_k=10)
             rep_entities = _extract_entities(str(best.get("title") or ""), max_e=6)
-            cid = _cluster_id_v2(ck, dy, rep_keywords, rep_entities)
+            cid = _cluster_id_v2(sk, dy, rep_keywords, rep_entities)
 
             for it in gitems:
                 it["cluster_id"] = cid
@@ -2107,7 +2199,8 @@ def _rank_score_and_factors(a: Dict[str, Any]) -> Tuple[float, Dict[str, Any]]:
     has_cached = 1.0 if a.get("has_cached_summary") else 0.0
     cached_term = has_cached * float(w["cached_weight"])
 
-    is_mercopress = (a.get("country_key") or "").lower() == "mp"
+    subdivision_key = (a.get("subdivision_key") or a.get("country_key") or "").lower()
+    is_mercopress = subdivision_key == "mp"
     mp_term = float(w["mercopress_boost"]) if is_mercopress else 0.0
 
     score = float(recency_term + dup_term + snip_term + cached_term + mp_term)
@@ -2153,7 +2246,7 @@ def _cluster_rank_weights() -> Dict[str, float]:
     }
 
 
-def _cluster_rank_score_and_factors(cobj: Dict[str, Any], country_context: str) -> Tuple[float, Dict[str, Any]]:
+def _cluster_rank_score_and_factors(cobj: Dict[str, Any], subdivision_context: str) -> Tuple[float, Dict[str, Any]]:
     best = cobj.get("best_item") or {}
     now = datetime.now(timezone.utc)
 
@@ -2192,13 +2285,13 @@ def _cluster_rank_score_and_factors(cobj: Dict[str, Any], country_context: str) 
     has_cached = 1.0 if best.get("has_cached_summary") else 0.0
     cached_term = has_cached * float(w["cached_weight"])
 
-    country_context_norm = (country_context or "").strip().lower()
-    is_mercopress = (best.get("country_key") or "").strip().lower() == "mp"
+    subdivision_context_norm = (subdivision_context or "").strip().lower()
+    is_mercopress = (best.get("subdivision_key") or best.get("country_key") or "").strip().lower() == "mp"
 
     mp_term = 0.0
-    if is_mercopress and country_context_norm == "all":
+    if is_mercopress and subdivision_context_norm == "all":
         mp_term = -abs(float(w["mercopress_penalty_all"]))
-    elif is_mercopress and country_context_norm == "mp":
+    elif is_mercopress and subdivision_context_norm == "mp":
         mp_term = abs(float(w["mercopress_boost_mp"]))
 
     score = float(
@@ -2229,7 +2322,8 @@ def _cluster_rank_score_and_factors(cobj: Dict[str, Any], country_context: str) 
         "has_cached_summary": bool(best.get("has_cached_summary")),
         "cached_term": round(float(cached_term), 6),
         "is_mercopress": bool(is_mercopress),
-        "country_context": country_context_norm,
+        "subdivision_context": subdivision_context_norm,
+        "country_context": subdivision_context_norm,  # compatibility
         "mp_term": round(float(mp_term), 6),
         "weights": {
             "recency_weight": w["recency_weight"],
@@ -2308,30 +2402,69 @@ def get_regions():
     regions = []
     for key, meta in REGIONS.items():
         source_count = sum(1 for s in SOURCES if (s.get("region_key") or "").lower() == key)
+        subdivisions_meta = _region_subdivision_meta(key)
         regions.append(
             {
                 "key": meta["key"],
                 "name": meta["name"],
                 "status": meta["status"],
-                "default_country": meta.get("default_country"),
-                "countries_count": len(meta.get("countries") or {}),
+                "subdivision_label": meta.get("subdivision_label") or "Subdivision",
+                "default_subdivision": meta.get("default_subdivision") or meta.get("default_country"),
+                "default_country": meta.get("default_country") or meta.get("default_subdivision"),  # compatibility
+                "subdivisions_count": len(subdivisions_meta),
+                "countries_count": len(subdivisions_meta),  # compatibility
                 "source_count": source_count,
             }
         )
     return {"regions": regions}
 
 
-@app.get("/countries")
-def get_countries(region: str = DEFAULT_REGION_KEY):
+@app.get("/subdivisions")
+def get_subdivisions(region: str = DEFAULT_REGION_KEY):
     r = _normalize_region(region)
-    meta = _region_country_meta(r)
+    meta = _region_subdivision_meta(r)
 
     counts: Dict[str, int] = {k: 0 for k in meta.keys()}
     for s in SOURCES:
         sk_region = (s.get("region_key") or "").lower()
         if sk_region != r:
             continue
-        ck = (s.get("country_key") or "").lower()
+        sk = (s.get("subdivision_key") or s.get("country_key") or "").lower()
+        if sk in counts:
+            counts[sk] += 1
+
+    subdivisions = []
+    for key, info in meta.items():
+        subdivisions.append(
+            {
+                "key": key,
+                "code": info["code"],
+                "name": info["name"],
+                "flag_url": info["flag_url"],
+                "source_count": counts.get(key, 0),
+            }
+        )
+
+    return {
+        "region": r,
+        "subdivision_label": _region_subdivision_label(r),
+        "default_subdivision": _default_subdivision_for_region(r),
+        "subdivisions": subdivisions,
+    }
+
+
+@app.get("/countries")
+def get_countries(region: str = DEFAULT_REGION_KEY):
+    # Backward-compatible endpoint backed by canonical subdivisions
+    r = _normalize_region(region)
+    meta = _region_subdivision_meta(r)
+
+    counts: Dict[str, int] = {k: 0 for k in meta.keys()}
+    for s in SOURCES:
+        sk_region = (s.get("region_key") or "").lower()
+        if sk_region != r:
+            continue
+        ck = (s.get("subdivision_key") or s.get("country_key") or "").lower()
         if ck in counts:
             counts[ck] += 1
 
@@ -2347,7 +2480,12 @@ def get_countries(region: str = DEFAULT_REGION_KEY):
             }
         )
 
-    return {"region": r, "countries": countries}
+    return {
+        "region": r,
+        "subdivision_label": _region_subdivision_label(r),
+        "default_subdivision": _default_subdivision_for_region(r),
+        "countries": countries,
+    }
 
 
 @app.get("/debug-sources")
@@ -2378,8 +2516,10 @@ def debug_sources(region: Optional[str] = None):
                     "error": str(bozo_exc) if bozo_exc else None,
                     "status": 200,
                     "bozo": bozo,
-                    "country_key": s.get("country_key"),
-                    "country_code": s.get("country_code"),
+                    "subdivision_key": s.get("subdivision_key") or s.get("country_key"),
+                    "country_key": s.get("country_key") or s.get("subdivision_key"),
+                    "subdivision_code": s.get("subdivision_code") or s.get("country_code"),
+                    "country_code": s.get("country_code") or s.get("subdivision_code"),
                 }
             )
         except Exception as e:
@@ -2394,8 +2534,10 @@ def debug_sources(region: Optional[str] = None):
                     "error": str(e),
                     "status": None,
                     "bozo": True,
-                    "country_key": s.get("country_key"),
-                    "country_code": s.get("country_code"),
+                    "subdivision_key": s.get("subdivision_key") or s.get("country_key"),
+                    "country_key": s.get("country_key") or s.get("subdivision_key"),
+                    "subdivision_code": s.get("subdivision_code") or s.get("country_code"),
+                    "country_code": s.get("country_code") or s.get("subdivision_code"),
                 }
             )
     return out
@@ -2403,28 +2545,28 @@ def debug_sources(region: Optional[str] = None):
 
 @app.get("/uy-news")
 def get_uruguay_news(range: str = "24h", q: str = "", limit: int = 50):
-    return get_news(region="mercosur", country="uy", range=range, q=q, limit=limit)
+    return get_news(region="mercosur", subdivision="uy", range=range, q=q, limit=limit)
 
 
-def _collect_items(region: str, country: str, range: str, q: str, scan_cap: int = 999999) -> List[Dict[str, Any]]:
+def _collect_items(region: str, subdivision: str, range: str, q: str, scan_cap: int = 999999) -> List[Dict[str, Any]]:
     r = _require_live_region(region)
-    c = _normalize_country_for_region(r, country)
+    s_key = _normalize_subdivision_for_region(r, subdivision)
     since = _range_to_since(range)
 
     items: List[Dict[str, Any]] = []
 
     for source in _sources_for_region(r):
-        ck = (source.get("country_key") or "").lower()
+        source_subdivision_key = (source.get("subdivision_key") or source.get("country_key") or "").lower()
 
         if r == "mercosur":
-            if c == "all":
-                if ck not in {"uy", "ar", "br", "py", "bo", "mp"}:
+            if s_key == "all":
+                if source_subdivision_key not in {"uy", "ar", "br", "py", "bo", "mp"}:
                     continue
             else:
-                if ck != c:
+                if source_subdivision_key != s_key:
                     continue
         else:
-            if ck != c:
+            if source_subdivision_key != s_key:
                 continue
 
         try:
@@ -2458,27 +2600,34 @@ def _collect_items(region: str, country: str, range: str, q: str, scan_cap: int 
     return items
 
 
-def _hard_cap_limit(region_key: str, country_key: str, lim: int) -> int:
+def _hard_cap_limit(region_key: str, subdivision_key: str, lim: int) -> int:
     r = (region_key or "").strip().lower()
-    c = (country_key or "").strip().lower()
-    if r == "mercosur" and c == "all":
+    s = (subdivision_key or "").strip().lower()
+    if r == "mercosur" and s == "all":
         return max(1, min(lim, 200))
     return max(1, min(lim, 200))
 
 
 @app.get("/news")
-def get_news(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str = "24h", q: str = "", limit: int = 50):
+def get_news(
+    region: str = DEFAULT_REGION_KEY,
+    country: Optional[str] = None,
+    subdivision: Optional[str] = None,
+    range: str = "24h",
+    q: str = "",
+    limit: int = 50,
+):
     r = _require_live_region(region)
-    c = _normalize_country_for_region(r, country)
+    selected_subdivision = _normalize_subdivision_for_region(r, _resolve_subdivision_param(subdivision, country))
 
     try:
         lim = int(limit)
     except Exception:
         lim = 50
 
-    lim = _hard_cap_limit(r, c, lim)
+    lim = _hard_cap_limit(r, selected_subdivision, lim)
 
-    cache_key = f"region={r}|country={c}|range={range}|q={q}|limit={lim}"
+    cache_key = f"region={r}|subdivision={selected_subdivision}|range={range}|q={q}|limit={lim}"
     cached = _news_cache_get(cache_key)
     if cached:
         payload, age_s = cached
@@ -2488,7 +2637,7 @@ def get_news(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str =
         return payload
 
     scan_cap = min(2000, max(200, lim * 10))
-    items = _collect_items(region=r, country=c, range=range, q=q, scan_cap=scan_cap)
+    items = _collect_items(region=r, subdivision=selected_subdivision, range=range, q=q, scan_cap=scan_cap)
     items = _dedupe(items)
 
     for a in items:
@@ -2504,7 +2653,17 @@ def get_news(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str =
     )
 
     items = items[:lim]
-    resp = {"region": r, "country": c, "range": range, "q": q, "limit": lim, "count": len(items), "articles": items}
+    resp = {
+        "region": r,
+        "subdivision_label": _region_subdivision_label(r),
+        "subdivision": selected_subdivision,
+        "country": selected_subdivision,  # compatibility
+        "range": range,
+        "q": q,
+        "limit": lim,
+        "count": len(items),
+        "articles": items,
+    }
     _news_cache_set(cache_key, resp)
 
     resp["cache_hit"] = False
@@ -2514,19 +2673,26 @@ def get_news(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str =
 
 
 @app.get("/clusters")
-def get_clusters(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str = "24h", q: str = "", limit: int = 50):
+def get_clusters(
+    region: str = DEFAULT_REGION_KEY,
+    country: Optional[str] = None,
+    subdivision: Optional[str] = None,
+    range: str = "24h",
+    q: str = "",
+    limit: int = 50,
+):
     r = _require_live_region(region)
-    c = _normalize_country_for_region(r, country)
+    selected_subdivision = _normalize_subdivision_for_region(r, _resolve_subdivision_param(subdivision, country))
 
     try:
         lim = int(limit)
     except Exception:
         lim = 50
 
-    lim = _hard_cap_limit(r, c, lim)
+    lim = _hard_cap_limit(r, selected_subdivision, lim)
 
     scan_cap = min(3000, max(300, lim * 12))
-    raw = _collect_items(region=r, country=c, range=range, q=q, scan_cap=scan_cap)
+    raw = _collect_items(region=r, subdivision=selected_subdivision, range=range, q=q, scan_cap=scan_cap)
 
     for it in raw:
         it["topic"] = _topic_label(it)
@@ -2548,7 +2714,7 @@ def get_clusters(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: s
             best["summary_en"] = cached_cluster.get("summary_en") or ""
             best["has_cached_summary"] = True
 
-        cscore, cfactors = _cluster_rank_score_and_factors(cobj, country_context=c)
+        cscore, cfactors = _cluster_rank_score_and_factors(cobj, subdivision_context=selected_subdivision)
         cobj["cluster_rank_score"] = cscore
         cobj["cluster_rank_factors"] = cfactors
         best["cluster_rank_score"] = cscore
@@ -2564,24 +2730,41 @@ def get_clusters(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: s
     )
 
     clusters = clusters[:lim]
-    payload = {"region": r, "country": c, "range": range, "q": q, "limit": lim, "count": len(clusters), "clusters": clusters}
+    payload = {
+        "region": r,
+        "subdivision_label": _region_subdivision_label(r),
+        "subdivision": selected_subdivision,
+        "country": selected_subdivision,  # compatibility
+        "range": range,
+        "q": q,
+        "limit": lim,
+        "count": len(clusters),
+        "clusters": clusters,
+    }
     payload = _strip_internal_fields(payload)
     return payload
 
 
 @app.get("/top")
-def get_top(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str = "24h", q: str = "", limit: int = 30):
+def get_top(
+    region: str = DEFAULT_REGION_KEY,
+    country: Optional[str] = None,
+    subdivision: Optional[str] = None,
+    range: str = "24h",
+    q: str = "",
+    limit: int = 30,
+):
     r = _require_live_region(region)
-    c = _normalize_country_for_region(r, country)
+    selected_subdivision = _normalize_subdivision_for_region(r, _resolve_subdivision_param(subdivision, country))
 
     try:
         lim = int(limit)
     except Exception:
         lim = 30
 
-    lim = _hard_cap_limit(r, c, lim)
+    lim = _hard_cap_limit(r, selected_subdivision, lim)
 
-    cache_key = _top_cache_key(r, c, range, q, lim)
+    cache_key = _top_cache_key(r, selected_subdivision, range, q, lim)
     cached = _top_cache_get(cache_key)
     if cached:
         payload, age_s = cached
@@ -2596,7 +2779,7 @@ def get_top(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str = 
         return payload
 
     scan_cap = min(3000, max(300, lim * 14))
-    raw = _collect_items(region=r, country=c, range=range, q=q, scan_cap=scan_cap)
+    raw = _collect_items(region=r, subdivision=selected_subdivision, range=range, q=q, scan_cap=scan_cap)
 
     for it in raw:
         it["topic"] = _topic_label(it)
@@ -2618,7 +2801,7 @@ def get_top(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str = 
             best["summary_en"] = cached_cluster.get("summary_en") or ""
             best["has_cached_summary"] = True
 
-        cscore, cfactors = _cluster_rank_score_and_factors(cobj, country_context=c)
+        cscore, cfactors = _cluster_rank_score_and_factors(cobj, subdivision_context=selected_subdivision)
         cobj["cluster_rank_score"] = cscore
         cobj["cluster_rank_factors"] = cfactors
         best["cluster_rank_score"] = cscore
@@ -2634,7 +2817,17 @@ def get_top(region: str = DEFAULT_REGION_KEY, country: str = "uy", range: str = 
     )
 
     clusters = clusters[:lim]
-    payload = {"region": r, "country": c, "range": range, "q": q, "limit": lim, "count": len(clusters), "clusters": clusters}
+    payload = {
+        "region": r,
+        "subdivision_label": _region_subdivision_label(r),
+        "subdivision": selected_subdivision,
+        "country": selected_subdivision,  # compatibility
+        "range": range,
+        "q": q,
+        "limit": lim,
+        "count": len(clusters),
+        "clusters": clusters,
+    }
 
     _top_cache_set(cache_key, payload)
 
@@ -2907,9 +3100,11 @@ def _worker_loop() -> None:
     if not ranges:
         ranges = ["24h"]
 
-    countries = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,mp,all")
-    if not countries:
-        countries = ["uy", "ar", "br", "py", "bo", "mp", "all"]
+    subdivisions = _env_list("PRE_ENRICH_SUBDIVISIONS", "")
+    if not subdivisions:
+        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,mp,all")
+    if not subdivisions:
+        subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all"]
 
     scan_limit = _env_int("PRE_ENRICH_SCAN_LIMIT", _env_int("PRE_ENRICH_MAX_ITEMS_PER_RUN", 60))
     max_new_per_bucket = _env_int("PRE_ENRICH_MAX_NEW_PER_BUCKET", 15)
@@ -2938,14 +3133,15 @@ def _worker_loop() -> None:
             "startup_delay_s": startup_delay_s,
             "regions": regions,
             "ranges": ranges,
-            "countries": countries,
+            "subdivisions": subdivisions,
+            "countries": subdivisions,  # compatibility
             "scan_limit": scan_limit,
             "max_new_per_bucket": max_new_per_bucket,
             "max_new_total": max_new_total,
             "batch_size": batch_size,
             "enriched_count": 0,
             "buckets": {},
-            "mode": "cluster_v2_region_aware",
+            "mode": "cluster_v2_region_aware_subdivision",
         }
 
         try:
@@ -2961,27 +3157,27 @@ def _worker_loop() -> None:
                 if region_key not in LIVE_REGION_KEYS:
                     continue
 
-                region_countries = countries
+                region_subdivisions = subdivisions
                 if region_key != "mercosur":
-                    region_countries = [k for k in countries if k in _valid_country_keys_for_region(region_key)]
+                    region_subdivisions = [k for k in subdivisions if k in _valid_subdivision_keys_for_region(region_key)]
 
-                for c in region_countries:
-                    if c not in _valid_country_keys_for_region(region_key):
+                for subdivision_key in region_subdivisions:
+                    if subdivision_key not in _valid_subdivision_keys_for_region(region_key):
                         continue
 
                     for r in ranges:
-                        bucket_key = f"{region_key}:{c}:{r}"
+                        bucket_key = f"{region_key}:{subdivision_key}:{r}"
                         bucket_scanned = 0
                         bucket_cached = 0
                         bucket_queued = 0
                         bucket_enriched = 0
 
                         effective_scan_limit = int(scan_limit)
-                        if region_key == "mercosur" and (c or "").lower() == "all":
+                        if region_key == "mercosur" and (subdivision_key or "").lower() == "all":
                             effective_scan_limit = min(effective_scan_limit, 60)
 
                         scan_cap = max(150, int(effective_scan_limit) * 10)
-                        items = _collect_items(region=region_key, country=c, range=r, q="", scan_cap=scan_cap)
+                        items = _collect_items(region=region_key, subdivision=subdivision_key, range=r, q="", scan_cap=scan_cap)
                         items = _dedupe(items)
 
                         for a in items:
@@ -2996,7 +3192,7 @@ def _worker_loop() -> None:
 
                         clusters = _cluster_items_v2(items[: max(80, effective_scan_limit * 4)])
                         for cobj in clusters:
-                            cscore, cfactors = _cluster_rank_score_and_factors(cobj, country_context=c)
+                            cscore, cfactors = _cluster_rank_score_and_factors(cobj, subdivision_context=subdivision_key)
                             cobj["cluster_rank_score"] = cscore
                             cobj["cluster_rank_factors"] = cfactors
 
