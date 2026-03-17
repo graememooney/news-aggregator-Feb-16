@@ -1376,49 +1376,48 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mt-5 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
+      <section className="mt-3 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
         <div className="flex flex-col gap-3">
           <div>
             <h2 className="text-base font-semibold text-gray-950 dark:text-white sm:text-lg">Choose your region</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Stay on one homepage and switch editions instantly.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {regionOptionsForUi.map((regionOption) => {
-              const isSelected = regionOption.key === region;
-              const isLive = regionOption.status === "live";
+          <div className="-mx-1 overflow-x-auto px-1 pb-1">
+            <div className="flex min-w-max gap-2">
+              {regionOptionsForUi.map((regionOption) => {
+                const isSelected = regionOption.key === region;
+                const isLive = regionOption.status === "live";
 
-              return (
-                <button
-                  key={regionOption.key}
-                  type="button"
-                  onClick={() => void selectRegionHomepage(regionOption.key)}
-                  className={`rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
-                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-base font-semibold tracking-tight text-gray-950 dark:text-white">
-                      {regionOption.name}
-                    </span>
+                return (
+                  <button
+                    key={regionOption.key}
+                    type="button"
+                    onClick={() => void selectRegionHomepage(regionOption.key)}
+                    className={`min-w-[168px] rounded-2xl border px-3 py-2.5 text-left shadow-sm transition ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
+                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate pr-1 text-sm font-semibold tracking-tight text-gray-950 dark:text-white">
+                        {regionOption.name}
+                      </span>
 
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
-                        isLive
-                          ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
-                          : "border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
-                      }`}
-                    >
-                      {isLive ? "Live" : "Coming Soon"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+                      <span
+                        className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase leading-none tracking-wide ${
+                          isLive
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
+                            : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+                        }`}
+                      >
+                        {isLive ? "Live" : "Coming Soon"}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {comingSoonMessage ? (
@@ -1429,7 +1428,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mt-5 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
+      <section className="mt-4 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <div className="flex-1">
@@ -1951,6 +1950,9 @@ export default function Home() {
                 </p>
                 <p className="mt-2">
                   When you want more detail, use the article button to open the original source through Google Translate and read the full story in English.
+                </p>
+                <p className="mt-2">
+                  You can stay on one homepage and switch regional editions instantly without moving to a separate landing page.
                 </p>
               </div>
 
