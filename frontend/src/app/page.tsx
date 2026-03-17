@@ -1382,42 +1382,44 @@ export default function Home() {
             <h2 className="text-base font-semibold text-gray-950 dark:text-white sm:text-lg">Choose your region</h2>
           </div>
 
-          <div className="-mx-1 overflow-x-auto px-1 pb-1">
-            <div className="flex min-w-max gap-2">
-              {regionOptionsForUi.map((regionOption) => {
-                const isSelected = regionOption.key === region;
-                const isLive = regionOption.status === "live";
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {regionOptionsForUi.map((regionOption) => {
+              const isSelected = regionOption.key === region;
+              const isLive = regionOption.status === "live";
 
-                return (
-                  <button
-                    key={regionOption.key}
-                    type="button"
-                    onClick={() => void selectRegionHomepage(regionOption.key)}
-                    className={`min-w-[168px] rounded-2xl border px-3 py-2.5 text-left shadow-sm transition ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
-                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate pr-1 text-sm font-semibold tracking-tight text-gray-950 dark:text-white">
-                        {regionOption.name}
-                      </span>
+              return (
+                <button
+                  key={regionOption.key}
+                  type="button"
+                  onClick={() => void selectRegionHomepage(regionOption.key)}
+                  className={`min-w-0 rounded-2xl border px-2 py-2 text-left shadow-sm transition sm:px-3 sm:py-2.5 ${
+                    isSelected
+                      ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
+                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                  }`}
+                >
+                  <div className="flex min-h-[48px] flex-col justify-between gap-1.5 sm:min-h-[52px]">
+                    <span
+                      className={`block text-[13px] font-semibold tracking-tight sm:text-[15px] ${
+                        regionOption.key === "central-america" ? "leading-tight" : "truncate"
+                      } text-gray-950 dark:text-white`}
+                    >
+                      {regionOption.name}
+                    </span>
 
-                      <span
-                        className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase leading-none tracking-wide ${
-                          isLive
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
-                            : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
-                        }`}
-                      >
-                        {isLive ? "Live" : "Coming Soon"}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    <span
+                      className={`inline-flex w-fit max-w-full items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[8px] font-semibold uppercase leading-none tracking-wide sm:px-2.5 sm:py-1 sm:text-[10px] ${
+                        isLive
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
+                          : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+                      }`}
+                    >
+                      {isLive ? "Live" : "Coming Soon"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {comingSoonMessage ? (
