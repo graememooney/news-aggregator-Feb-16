@@ -99,6 +99,7 @@ const ENRICH_BATCH_SIZE = 3;
 const PRIORITY_ENRICH_COUNT = 5;
 const OBSERVER_ROOT_MARGIN = "900px";
 const GENERIC_ENRICH_ERROR = "Service temporarily unavailable. Please try again later.";
+const STARTUP_SPLASH_MIN_MS = 1800;
 
 const UNCATEGORIZED = "General";
 
@@ -467,6 +468,7 @@ export default function Home() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [mounted, setMounted] = useState(false);
   const [prefsReady, setPrefsReady] = useState(false);
+  const [showStartupSplash, setShowStartupSplash] = useState(true);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -1043,6 +1045,8 @@ export default function Home() {
     } catch {}
 
     async function initialize() {
+      const startTime = Date.now();
+
       const nextRegions = await fetchRegionsFromBackend();
       const normalizedRegion =
         nextRegions.some((r) => r.key === savedRegion) && isLiveRegionFromList(savedRegion, nextRegions)
@@ -1074,6 +1078,13 @@ export default function Home() {
       setPrefsReady(true);
 
       await loadTopStories(normalizedRegion, savedRange, normalizedSubdivision, savedHeadlineLimit);
+
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, STARTUP_SPLASH_MIN_MS - elapsed);
+
+      window.setTimeout(() => {
+        setShowStartupSplash(false);
+      }, remaining);
     }
 
     void initialize();
@@ -1324,707 +1335,737 @@ export default function Home() {
   const subscribeInsertIndex = filteredClusters.length >= 4 ? 3 : -1;
 
   return (
-    <main className="mx-auto max-w-6xl overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
-      <section className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/80 px-5 py-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/40 sm:px-7 sm:py-7">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.10),transparent_32%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.12),transparent_32%)]" />
+    <>
+      <main className="mx-auto max-w-6xl overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
+        <section className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/80 px-5 py-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/40 sm:px-7 sm:py-7">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.10),transparent_32%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.12),transparent_32%)]" />
 
-        <div className="pointer-events-none absolute right-[-40px] top-[-30px] hidden h-52 w-52 opacity-[0.10] md:block">
-          <img src={BRAND_LOGO_PATH} alt="" className="h-full w-full object-contain" />
-        </div>
-
-        <div className="relative flex flex-col gap-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <img
-                  src={BRAND_LOGO_PATH}
-                  alt={APP_NAME}
-                  className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16"
-                />
-
-                <div className="min-w-0">
-                  <h1 className="break-words text-[2.4rem] font-extrabold leading-[0.92] tracking-tight text-gray-950 dark:text-white sm:text-6xl">
-                    <span className="text-blue-500">Regional Pulse</span> News
-                  </h1>
-                </div>
-              </div>
-
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
-                {APP_TAGLINE}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              <button
-                onClick={() => setInfoOpen(true)}
-                aria-label="Info"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-blue-600 shadow-sm transition hover:border-blue-300 hover:text-blue-500 dark:border-gray-700 dark:bg-black dark:text-blue-400"
-              >
-                <InfoIcon />
-              </button>
-
-              <button
-                onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-                className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
-                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {mounted ? theme === "dark" ? <SunIcon /> : <MoonIcon /> : <MoonIcon />}
-                <span>{mounted ? (theme === "dark" ? "Light" : "Dark") : "Theme"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-3 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
-        <div className="flex flex-col gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-gray-950 dark:text-white sm:text-lg">Choose your region</h2>
+          <div className="pointer-events-none absolute right-[-40px] top-[-30px] hidden h-52 w-52 opacity-[0.10] md:block">
+            <img src={BRAND_LOGO_PATH} alt="" className="h-full w-full object-contain" />
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {regionOptionsForUi.map((regionOption) => {
-              const isSelected = regionOption.key === region;
-              const isLive = regionOption.status === "live";
+          <div className="relative flex flex-col gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={BRAND_LOGO_PATH}
+                    alt={APP_NAME}
+                    className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16"
+                  />
 
-              return (
-                <button
-                  key={regionOption.key}
-                  type="button"
-                  onClick={() => void selectRegionHomepage(regionOption.key)}
-                  className={`min-w-0 rounded-2xl border px-2 py-2 text-left shadow-sm transition sm:px-3 sm:py-2.5 ${
-                    isSelected
-                      ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
-                      : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <div className="flex min-h-[48px] flex-col justify-between gap-1.5 sm:min-h-[52px]">
-                    <span
-                      className={`block text-[13px] font-semibold tracking-tight sm:text-[15px] ${
-                        regionOption.key === "central-america" ? "leading-tight" : "truncate"
-                      } text-gray-950 dark:text-white`}
-                    >
-                      {regionOption.name}
-                    </span>
-
-                    <span
-                      className={`inline-flex w-fit max-w-full items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[8px] font-semibold uppercase leading-none tracking-wide sm:px-2.5 sm:py-1 sm:text-[10px] ${
-                        isLive
-                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
-                          : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
-                      }`}
-                    >
-                      {isLive ? "Live" : "Coming Soon"}
-                    </span>
+                  <div className="min-w-0">
+                    <h1 className="break-words text-[2.4rem] font-extrabold leading-[0.92] tracking-tight text-gray-950 dark:text-white sm:text-6xl">
+                      <span className="text-blue-500">Regional Pulse</span> News
+                    </h1>
                   </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {comingSoonMessage ? (
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
-              {comingSoonMessage}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="mt-4 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
-              <label className="sr-only">Search</label>
-              <input
-                ref={searchInputRef}
-                className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-black shadow-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                placeholder="Search headlines & summaries"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    performSearchAction();
-                  }
-                }}
-              />
-            </div>
-
-            <button
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
-              onClick={() => setFiltersOpen(true)}
-              title="Open filters"
-            >
-              <FilterIcon />
-              <span className="hidden sm:inline">Filters</span>
-            </button>
-
-            <button
-              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-gray-900 bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
-              onClick={performSearchAction}
-              title="Search"
-            >
-              <SearchIcon />
-              <span className="hidden sm:inline">Search</span>
-            </button>
-          </div>
-
-          {showFilterChips ? (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              {hasNonDefaultRegion ? (
-                <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
-                  Region: {selectedRegionName}
-                </span>
-              ) : null}
-              {hasNonDefaultSubdivision ? (
-                <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
-                  {subdivisionLabel}: {selectedSubdivisionName}
-                </span>
-              ) : null}
-              {hasNonDefaultRange ? (
-                <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
-                  Range: {range === "24h" ? "24h" : range === "3d" ? "3 Days" : range === "7d" ? "7 Days" : "30 Days"}
-                </span>
-              ) : null}
-              {hasNonDefaultCategory ? (
-                <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
-                  Category: {category}
-                </span>
-              ) : null}
-              {hasNonDefaultLimit ? (
-                <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
-                  Limit: Top {headlineLimit}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="mt-5 flex flex-col gap-4 rounded-3xl border border-gray-200 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-white">{selectedSubdivisionName} News</h2>
-
-              <button
-                onClick={() => setShareOpen(true)}
-                className="inline-flex items-center rounded-full border border-gray-300 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
-                title="Share this view"
-              >
-                Share
-              </button>
-
-              {shareMessage ? <span className="text-sm text-gray-600 dark:text-gray-400">{shareMessage}</span> : null}
-            </div>
-
-            {!loading && !loadError ? (
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
-                <span>{storyCountLabel(filteredClusters.length)}</span>
-                {freshnessText ? <span>{freshnessText}</span> : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="pt-1 text-sm font-medium text-gray-500 dark:text-gray-400 sm:text-right">
-            {loading && !loadError ? "Loading headlines..." : ""}
-          </div>
-        </div>
-
-        {loadError ? (
-          <div className="rounded-2xl border border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-white/5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="text-sm text-gray-800 dark:text-white/80">
-                <div className="font-semibold">Service temporarily unavailable</div>
-                <div className="mt-1 text-gray-600 dark:text-gray-400">
-                  We couldn’t load headlines right now. Please try again in a moment.
                 </div>
-                {typeof loadError.status === "number" && loadError.status ? (
-                  <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">Error code: {loadError.status}</div>
-                ) : null}
+
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
+                  {APP_TAGLINE}
+                </p>
               </div>
-              <button
-                onClick={() => loadTopStories(region, range, subdivision, headlineLimit)}
-                className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        ) : null}
 
-        {showEmptyState ? (
-          <div className="rounded-3xl border border-gray-200 bg-gray-50 px-5 py-8 text-center shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No stories match this view</h3>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-              Try broadening your search or adjusting your filters to see more coverage from this feed.
-            </p>
-
-            {hasActiveSearch ? (
-              <div className="mt-4">
+              <div className="flex items-center gap-2 self-start sm:self-auto">
                 <button
-                  onClick={clearSearchOnly}
-                  className="inline-flex items-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                  onClick={() => setInfoOpen(true)}
+                  aria-label="Info"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-blue-600 shadow-sm transition hover:border-blue-300 hover:text-blue-500 dark:border-gray-700 dark:bg-black dark:text-blue-400"
                 >
-                  Clear search
+                  <InfoIcon />
+                </button>
+
+                <button
+                  onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
+                  aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                >
+                  {mounted ? theme === "dark" ? <SunIcon /> : <MoonIcon /> : <MoonIcon />}
+                  <span>{mounted ? (theme === "dark" ? "Light" : "Dark") : "Theme"}</span>
                 </button>
               </div>
-            ) : null}
+            </div>
           </div>
-        ) : null}
-      </section>
+        </section>
 
-      <div className="mt-6 space-y-6">
-        {filteredClusters.map((c, index) => {
-          const a = c.best_item;
+        <section className="mt-3 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
+          <div className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-base font-semibold text-gray-950 dark:text-white sm:text-lg">Choose your region</h2>
+            </div>
 
-          const src = (a.source || "").trim();
-          const logoFailed = failedLogosRef.current.has(src);
-          const showLogo = !!a.source_logo && !logoFailed;
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {regionOptionsForUi.map((regionOption) => {
+                const isSelected = regionOption.key === region;
+                const isLive = regionOption.status === "live";
 
-          const titleReady = !!(a.title_en && a.title_en.trim());
-          const summaryReady = !!(a.summary_en && a.summary_en.trim());
-          const translatedReady = titleReady && summaryReady;
-
-          const topic = normalizeTopic(a.topic || c.topic);
-
-          const link = a.link;
-          const st = enrichState[link]?.status || "idle";
-          const errMsg = enrichState[link]?.message || GENERIC_ENRICH_ERROR;
-
-          const displayFlag = a.subdivision_flag_url || a.country_flag_url || "";
-
-          return (
-            <div key={c.cluster_id}>
-              {subscribeInsertIndex === index ? (
-                <section className="mb-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-black/40 dark:to-amber-500/10">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div className="min-w-0">
-                      <div className="inline-flex items-center rounded-full border border-amber-300 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-white/5 dark:text-amber-300">
-                        Upgrade
-                      </div>
-                      <h3 className="mt-3 text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
-                        Subscribe and keep the app ad free
-                      </h3>
-                      <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                        Enjoy a cleaner reading experience while supporting the continued growth of the app.
-                      </p>
-                    </div>
-
-                    <div className="shrink-0">
-                      <button
-                        className="inline-flex min-h-11 items-center rounded-full border border-gray-900 bg-gray-900 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
-                        type="button"
-                      >
-                        Subscribe
-                      </button>
-                    </div>
-                  </div>
-                </section>
-              ) : null}
-
-              <div
-                ref={(el) => {
-                  cardRefs.current[a.link] = el;
-                }}
-                data-link={a.link}
-                className={`rounded-3xl border p-5 shadow-sm transition sm:p-6 ${
-                  translatedReady
-                    ? "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]"
-                    : "border-gray-200 bg-gray-50/80 opacity-70 dark:border-gray-800 dark:bg-white/[0.03]"
-                }`}
-              >
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    {displayFlag ? <img src={displayFlag} alt="Flag" className="h-4 w-auto rounded-sm" /> : null}
-
-                    {showLogo ? (
-                      <img
-                        src={a.source_logo as string}
-                        alt={a.source}
-                        className="h-5 w-5 object-contain"
-                        onError={() => {
-                          failedLogosRef.current.add(src);
-                          forceRerender((x) => x + 1);
-                        }}
-                      />
-                    ) : (
-                      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-gray-200 bg-gray-100 px-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                        {initials(a.source)}
-                      </span>
-                    )}
-
-                    <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
-                  </div>
-
-                  {topic ? (
-                    <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80">
-                      {topic}
-                    </span>
-                  ) : null}
-                </div>
-
-                {translatedReady ? (
-                  <>
-                    <h3 className="text-xl font-semibold leading-snug tracking-tight text-gray-950 dark:text-white">{a.title_en}</h3>
-                    <p className="mt-3 text-[15px] leading-7 text-gray-700 dark:text-white/75">{a.summary_en}</p>
-                  </>
-                ) : st === "error" ? (
-                  <>
-                    <div className="mb-2 h-6 w-40 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{errMsg}</p>
-                      <button
-                        onClick={() => retryEnrich(a.link)}
-                        className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-400 bg-transparent px-3 py-1.5 text-xs font-medium text-black transition hover:opacity-90 dark:border-gray-600 dark:text-white"
-                        aria-label="Retry summary enrichment"
-                      >
-                        Retry
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="animate-pulse space-y-3">
-                    <div className="h-6 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="h-3 w-4/6 rounded bg-gray-200 dark:bg-gray-700" />
-                  </div>
-                )}
-
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{formatPublishedUTC(a)}</p>
-
+                return (
                   <button
-                    onClick={() => openTranslated(a.link)}
-                    disabled={!translatedReady}
-                    className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition ${
-                      translatedReady
-                        ? "border-gray-900 bg-gray-900 text-white hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
-                        : "cursor-not-allowed border-gray-300 bg-gray-300 text-gray-600 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-500"
+                    key={regionOption.key}
+                    type="button"
+                    onClick={() => void selectRegionHomepage(regionOption.key)}
+                    className={`min-w-0 rounded-2xl border px-2 py-2 text-center shadow-sm transition sm:px-3 sm:py-2.5 ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
+                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
                     }`}
                   >
-                    Open Translated Article →
+                    <div className="flex min-h-[48px] flex-col items-center justify-center gap-1.5 sm:min-h-[52px]">
+                      <span
+                        className={`block text-center text-[13px] font-semibold tracking-tight sm:text-[15px] ${
+                          regionOption.key === "central-america" ? "leading-tight" : "truncate"
+                        } text-gray-950 dark:text-white`}
+                      >
+                        {regionOption.name}
+                      </span>
+
+                      <span
+                        className={`inline-flex w-fit max-w-full items-center justify-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[8px] font-semibold uppercase leading-none tracking-wide sm:px-2.5 sm:py-1 sm:text-[10px] ${
+                          isLive
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
+                            : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+                        }`}
+                      >
+                        {isLive ? "Live" : "Coming Soon"}
+                      </span>
+                    </div>
                   </button>
+                );
+              })}
+            </div>
+
+            {comingSoonMessage ? (
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+                {comingSoonMessage}
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="mt-4 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <label className="sr-only">Search</label>
+                <input
+                  ref={searchInputRef}
+                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-black shadow-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  placeholder="Search headlines & summaries"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      performSearchAction();
+                    }
+                  }}
+                />
+              </div>
+
+              <button
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
+                onClick={() => setFiltersOpen(true)}
+                title="Open filters"
+              >
+                <FilterIcon />
+                <span className="hidden sm:inline">Filters</span>
+              </button>
+
+              <button
+                className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-gray-900 bg-gray-900 px-4 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                onClick={performSearchAction}
+                title="Search"
+              >
+                <SearchIcon />
+                <span className="hidden sm:inline">Search</span>
+              </button>
+            </div>
+
+            {showFilterChips ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                {hasNonDefaultRegion ? (
+                  <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
+                    Region: {selectedRegionName}
+                  </span>
+                ) : null}
+                {hasNonDefaultSubdivision ? (
+                  <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
+                    {subdivisionLabel}: {selectedSubdivisionName}
+                  </span>
+                ) : null}
+                {hasNonDefaultRange ? (
+                  <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
+                    Range: {range === "24h" ? "24h" : range === "3d" ? "3 Days" : range === "7d" ? "7 Days" : "30 Days"}
+                  </span>
+                ) : null}
+                {hasNonDefaultCategory ? (
+                  <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
+                    Category: {category}
+                  </span>
+                ) : null}
+                {hasNonDefaultLimit ? (
+                  <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
+                    Limit: Top {headlineLimit}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <section className="mt-5 flex flex-col gap-4 rounded-3xl border border-gray-200 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-white">{selectedSubdivisionName} News</h2>
+
+                <button
+                  onClick={() => setShareOpen(true)}
+                  className="inline-flex items-center rounded-full border border-gray-300 bg-white px-3.5 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
+                  title="Share this view"
+                >
+                  Share
+                </button>
+
+                {shareMessage ? <span className="text-sm text-gray-600 dark:text-gray-400">{shareMessage}</span> : null}
+              </div>
+
+              {!loading && !loadError ? (
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
+                  <span>{storyCountLabel(filteredClusters.length)}</span>
+                  {freshnessText ? <span>{freshnessText}</span> : null}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="pt-1 text-sm font-medium text-gray-500 dark:text-gray-400 sm:text-right">
+              {loading && !loadError ? "Loading headlines..." : ""}
+            </div>
+          </div>
+
+          {loadError ? (
+            <div className="rounded-2xl border border-gray-300 bg-gray-50 p-4 dark:border-gray-700 dark:bg-white/5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="text-sm text-gray-800 dark:text-white/80">
+                  <div className="font-semibold">Service temporarily unavailable</div>
+                  <div className="mt-1 text-gray-600 dark:text-gray-400">
+                    We couldn’t load headlines right now. Please try again in a moment.
+                  </div>
+                  {typeof loadError.status === "number" && loadError.status ? (
+                    <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">Error code: {loadError.status}</div>
+                  ) : null}
+                </div>
+                <button
+                  onClick={() => loadTopStories(region, range, subdivision, headlineLimit)}
+                  className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {showEmptyState ? (
+            <div className="rounded-3xl border border-gray-200 bg-gray-50 px-5 py-8 text-center shadow-sm dark:border-gray-800 dark:bg-white/[0.03]">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No stories match this view</h3>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                Try broadening your search or adjusting your filters to see more coverage from this feed.
+              </p>
+
+              {hasActiveSearch ? (
+                <div className="mt-4">
+                  <button
+                    onClick={clearSearchOnly}
+                    className="inline-flex items-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+
+        <div className="mt-6 space-y-6">
+          {filteredClusters.map((c, index) => {
+            const a = c.best_item;
+
+            const src = (a.source || "").trim();
+            const logoFailed = failedLogosRef.current.has(src);
+            const showLogo = !!a.source_logo && !logoFailed;
+
+            const titleReady = !!(a.title_en && a.title_en.trim());
+            const summaryReady = !!(a.summary_en && a.summary_en.trim());
+            const translatedReady = titleReady && summaryReady;
+
+            const topic = normalizeTopic(a.topic || c.topic);
+
+            const link = a.link;
+            const st = enrichState[link]?.status || "idle";
+            const errMsg = enrichState[link]?.message || GENERIC_ENRICH_ERROR;
+
+            const displayFlag = a.subdivision_flag_url || a.country_flag_url || "";
+
+            return (
+              <div key={c.cluster_id}>
+                {subscribeInsertIndex === index ? (
+                  <section className="mb-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-black/40 dark:to-amber-500/10">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <div className="inline-flex items-center rounded-full border border-amber-300 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-white/5 dark:text-amber-300">
+                          Upgrade
+                        </div>
+                        <h3 className="mt-3 text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
+                          Subscribe and keep the app ad free
+                        </h3>
+                        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                          Enjoy a cleaner reading experience while supporting the continued growth of the app.
+                        </p>
+                      </div>
+
+                      <div className="shrink-0">
+                        <button
+                          className="inline-flex min-h-11 items-center rounded-full border border-gray-900 bg-gray-900 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                          type="button"
+                        >
+                          Subscribe
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
+
+                <div
+                  ref={(el) => {
+                    cardRefs.current[a.link] = el;
+                  }}
+                  data-link={a.link}
+                  className={`rounded-3xl border p-5 shadow-sm transition sm:p-6 ${
+                    translatedReady
+                      ? "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]"
+                      : "border-gray-200 bg-gray-50/80 opacity-70 dark:border-gray-800 dark:bg-white/[0.03]"
+                  }`}
+                >
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      {displayFlag ? <img src={displayFlag} alt="Flag" className="h-4 w-auto rounded-sm" /> : null}
+
+                      {showLogo ? (
+                        <img
+                          src={a.source_logo as string}
+                          alt={a.source}
+                          className="h-5 w-5 object-contain"
+                          onError={() => {
+                            failedLogosRef.current.add(src);
+                            forceRerender((x) => x + 1);
+                          }}
+                        />
+                      ) : (
+                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-gray-200 bg-gray-100 px-1 text-[11px] text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                          {initials(a.source)}
+                        </span>
+                      )}
+
+                      <span className="min-w-0 truncate text-sm text-gray-600 dark:text-gray-400">{a.source}</span>
+                    </div>
+
+                    {topic ? (
+                      <span className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-700 dark:border-gray-700 dark:bg-white/5 dark:text-white/80">
+                        {topic}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {translatedReady ? (
+                    <>
+                      <h3 className="text-xl font-semibold leading-snug tracking-tight text-gray-950 dark:text-white">{a.title_en}</h3>
+                      <p className="mt-3 text-[15px] leading-7 text-gray-700 dark:text-white/75">{a.summary_en}</p>
+                    </>
+                  ) : st === "error" ? (
+                    <>
+                      <div className="mb-2 h-6 w-40 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{errMsg}</p>
+                        <button
+                          onClick={() => retryEnrich(a.link)}
+                          className="inline-flex items-center whitespace-nowrap rounded-full border border-gray-400 bg-transparent px-3 py-1.5 text-xs font-medium text-black transition hover:opacity-90 dark:border-gray-600 dark:text-white"
+                          aria-label="Retry summary enrichment"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-6 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className="h-3 w-4/6 rounded bg-gray-200 dark:bg-gray-700" />
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{formatPublishedUTC(a)}</p>
+
+                    <button
+                      onClick={() => openTranslated(a.link)}
+                      disabled={!translatedReady}
+                      className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition ${
+                        translatedReady
+                          ? "border-gray-900 bg-gray-900 text-white hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                          : "cursor-not-allowed border-gray-300 bg-gray-300 text-gray-600 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-500"
+                      }`}
+                    >
+                      Open Translated Article →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {filtersOpen ? (
+          <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+            <button
+              className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+              aria-label="Close filters"
+              onClick={() => setFiltersOpen(false)}
+            />
+            <div className="relative max-h-[88vh] w-full overflow-x-hidden overflow-y-auto rounded-t-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:w-[calc(100vw-2rem)] sm:max-w-xl sm:rounded-3xl sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="text-xl font-semibold tracking-tight">Filters</h3>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Adjust your region and feed settings.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
+                  aria-label="Close filters modal"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Region</label>
+                  <select
+                    value={region}
+                    onChange={(e) => void handleRegionChange(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  >
+                    {regionOptionsForUi.map((r) => (
+                      <option key={r.key} value={r.key}>
+                        {r.status === "live" ? r.name : `${r.name} (coming soon)`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{subdivisionLabel}</label>
+                  <select
+                    value={subdivision}
+                    onChange={(e) => void handleSubdivisionChange(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  >
+                    {subdivisionOptions.map((c) => (
+                      <option key={c.key} value={c.key}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
+                  <select
+                    value={range}
+                    onChange={(e) => void handleRangeChange(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  >
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="3d">Last 3 Days</option>
+                    <option value="7d">Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as CategoryFilter)}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  >
+                    <option value="all">All categories</option>
+                    {categoryOptions.map((c) => (
+                      <option key={c} value={c} disabled={!topicsInData.has(c)}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Headline Limit</label>
+                  <select
+                    value={headlineLimit}
+                    onChange={(e) => void handleHeadlineLimitChange(Number(e.target.value) as HeadlineLimit)}
+                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  >
+                    {HEADLINE_LIMIT_OPTIONS.map((limit) => (
+                      <option key={limit} value={limit}>
+                        Top {limit}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+                <button
+                  onClick={resetFiltersToDefault}
+                  className="inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
+                >
+                  Reset defaults
+                </button>
+
+                <button
+                  onClick={() => setFiltersOpen(false)}
+                  className="inline-flex items-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {shareOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close share modal" onClick={() => setShareOpen(false)} />
+            <div className="relative w-[calc(100vw-2rem)] max-w-md rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="text-xl font-semibold tracking-tight">Share this view</h3>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Send this feed to another app or copy the link.</p>
+                </div>
+
+                <button
+                  onClick={() => setShareOpen(false)}
+                  className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
+                  aria-label="Close share modal"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <button
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                >
+                  <span className="shrink-0">
+                    <CopyLinkIcon />
+                  </span>
+                  <span>Copy link</span>
+                </button>
+
+                <button
+                  onClick={() => openExternalShare("whatsapp")}
+                  className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                >
+                  <span className="shrink-0">
+                    <WhatsAppIcon />
+                  </span>
+                  <span>WhatsApp</span>
+                </button>
+
+                <button
+                  onClick={() => openExternalShare("x")}
+                  className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                >
+                  <span className="shrink-0">
+                    <XIcon />
+                  </span>
+                  <span>X</span>
+                </button>
+
+                <button
+                  onClick={() => openExternalShare("facebook")}
+                  className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                >
+                  <span className="shrink-0">
+                    <FacebookIcon />
+                  </span>
+                  <span>Facebook</span>
+                </button>
+
+                <button
+                  onClick={() => openExternalShare("email")}
+                  className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                >
+                  <span className="shrink-0">
+                    <EmailIcon />
+                  </span>
+                  <span>Email</span>
+                </button>
+
+                <button
+                  onClick={handleNativeShare}
+                  className={`flex items-center gap-3 rounded-2xl border px-4 py-4 text-left text-sm font-medium shadow-sm transition ${
+                    canNativeShare
+                      ? "border-gray-300 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
+                      : "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-500"
+                  }`}
+                >
+                  <span className="shrink-0">
+                    <MoreAppsIcon />
+                  </span>
+                  <span>More apps</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {infoOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close" onClick={() => setInfoOpen(false)} />
+            <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-2xl overflow-x-hidden overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="break-words text-xl font-semibold tracking-tight">About {APP_NAME}</h3>
+                  <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">
+                    A mobile-friendly regional intelligence feed, translated into English.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setInfoOpen(false)}
+                  className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
+                  aria-label="Close modal"
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="mt-5 space-y-5 overflow-x-hidden break-words text-sm leading-relaxed">
+                <div className="text-gray-800 dark:text-white/80">
+                  <p>
+                    The app brings together public RSS headlines in one clean, easy-to-scan feed and translates them into English.
+                  </p>
+                  <p className="mt-2">
+                    Overlapping coverage is grouped into a single top story, then translated into English with a short summary so regional developments are easier to follow.
+                  </p>
+                  <p className="mt-2">
+                    When you want more detail, use the article button to open the original source through Google Translate and read the full story in English.
+                  </p>
+                  <p className="mt-2">
+                    You can stay on one homepage and switch regional editions instantly without moving to a separate landing page.
+                  </p>
+                </div>
+
+                <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
+                  <div className="font-semibold text-gray-900 dark:text-white">What you can do</div>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600 dark:text-gray-400">
+                    <li>
+                      <span className="text-gray-800 dark:text-white/80">Search quickly:</span> keep search visible on the main screen for fast filtering.
+                    </li>
+                    <li>
+                      <span className="text-gray-800 dark:text-white/80">Open filters when needed:</span> region, subdivision, date range, category, and headline limit are all available in the Filters panel.
+                    </li>
+                    <li>
+                      <span className="text-gray-800 dark:text-white/80">Switch regions over time:</span> Mercosur is live now, with more regional editions planned.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
+                  <div className="font-semibold text-gray-900 dark:text-white">How translation works</div>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
+                    Headlines and summaries are translated into English as stories load, so the feed stays fast and responsive. Cards remain muted until English text is ready.
+                  </p>
+                </div>
+
+                <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
+                  <div className="font-semibold text-gray-900 dark:text-white">Add to Home Screen</div>
+
+                  {standalone ? (
+                    <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
+                      <p>You’re already running the app in installed mode.</p>
+                      <p>If you reopen it from your home screen or app launcher, it should continue to open as an app.</p>
+                    </div>
+                  ) : installEvent ? (
+                    <div className="mt-2 space-y-3 text-gray-600 dark:text-gray-400">
+                      <p>Your browser supports installing this app for a faster, app-like experience.</p>
+                      <button
+                        onClick={handleInstallClick}
+                        className="inline-flex items-center justify-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
+                      >
+                        Install
+                      </button>
+                      <p>
+                        If you prefer to do it manually, open your browser menu and look for options such as “Install app”, “Add to Home screen”, or “Create shortcut”.
+                      </p>
+                    </div>
+                  ) : ios ? (
+                    <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
+                      <p>On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.</p>
+                      <p>If you do not see the option right away, scroll the Share sheet list until “Add to Home Screen” appears.</p>
+                    </div>
+                  ) : (
+                    <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
+                      <p>If your browser does not show an install prompt, you can usually add the app manually from the browser menu.</p>
+                      <p>Look for options such as “Install app”, “Add to Home screen”, “Create shortcut”, or “Install this site as an app”.</p>
+                      <p>If you do not see an install prompt, this browser may not currently support app installation for this site.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
+                  <div className="font-semibold text-gray-900 dark:text-white">Why it’s useful</div>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
+                    The app is designed for readers who want a faster way to follow regional developments without having to monitor multiple local-language outlets separately.
+                  </p>
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        ) : null}
+      </main>
 
-      {filtersOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-          <button
-            className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
-            aria-label="Close filters"
-            onClick={() => setFiltersOpen(false)}
-          />
-          <div className="relative max-h-[88vh] w-full overflow-x-hidden overflow-y-auto rounded-t-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:w-[calc(100vw-2rem)] sm:max-w-xl sm:rounded-3xl sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h3 className="text-xl font-semibold tracking-tight">Filters</h3>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Adjust your region and feed settings.
-                </p>
+      {showStartupSplash ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black px-6">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-blue-500/20 bg-black/95 p-8 text-center shadow-2xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.14),transparent_36%)]" />
+
+            <div className="relative flex flex-col items-center">
+              <img
+                src={BRAND_LOGO_PATH}
+                alt={APP_NAME}
+                className="h-24 w-24 object-contain sm:h-28 sm:w-28"
+              />
+
+              <h2 className="mt-5 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                <span className="text-blue-500">Regional Pulse</span> News
+              </h2>
+
+              <p className="mt-3 text-sm text-gray-300 sm:text-base">{APP_TAGLINE}</p>
+
+              <div className="mt-6 h-1.5 w-40 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-full animate-pulse rounded-full bg-blue-500" />
               </div>
 
-              <button
-                onClick={() => setFiltersOpen(false)}
-                className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
-                aria-label="Close filters modal"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-4">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Region</label>
-                <select
-                  value={region}
-                  onChange={(e) => void handleRegionChange(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                >
-                  {regionOptionsForUi.map((r) => (
-                    <option key={r.key} value={r.key}>
-                      {r.status === "live" ? r.name : `${r.name} (coming soon)`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{subdivisionLabel}</label>
-                <select
-                  value={subdivision}
-                  onChange={(e) => void handleSubdivisionChange(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                >
-                  {subdivisionOptions.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
-                <select
-                  value={range}
-                  onChange={(e) => void handleRangeChange(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                >
-                  <option value="24h">Last 24 Hours</option>
-                  <option value="3d">Last 3 Days</option>
-                  <option value="7d">Last 7 Days</option>
-                  <option value="30d">Last 30 Days</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as CategoryFilter)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                >
-                  <option value="all">All categories</option>
-                  {categoryOptions.map((c) => (
-                    <option key={c} value={c} disabled={!topicsInData.has(c)}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Headline Limit</label>
-                <select
-                  value={headlineLimit}
-                  onChange={(e) => void handleHeadlineLimitChange(Number(e.target.value) as HeadlineLimit)}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                >
-                  {HEADLINE_LIMIT_OPTIONS.map((limit) => (
-                    <option key={limit} value={limit}>
-                      Top {limit}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-              <button
-                onClick={resetFiltersToDefault}
-                className="inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
-              >
-                Reset defaults
-              </button>
-
-              <button
-                onClick={() => setFiltersOpen(false)}
-                className="inline-flex items-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
-              >
-                Done
-              </button>
+              <p className="mt-3 text-xs uppercase tracking-[0.2em] text-gray-400">Loading headlines</p>
             </div>
           </div>
         </div>
       ) : null}
-
-      {shareOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close share modal" onClick={() => setShareOpen(false)} />
-          <div className="relative w-[calc(100vw-2rem)] max-w-md rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h3 className="text-xl font-semibold tracking-tight">Share this view</h3>
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Send this feed to another app or copy the link.</p>
-              </div>
-
-              <button
-                onClick={() => setShareOpen(false)}
-                className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
-                aria-label="Close share modal"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <button
-                onClick={handleCopyLink}
-                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-              >
-                <span className="shrink-0">
-                  <CopyLinkIcon />
-                </span>
-                <span>Copy link</span>
-              </button>
-
-              <button
-                onClick={() => openExternalShare("whatsapp")}
-                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-              >
-                <span className="shrink-0">
-                  <WhatsAppIcon />
-                </span>
-                <span>WhatsApp</span>
-              </button>
-
-              <button
-                onClick={() => openExternalShare("x")}
-                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-              >
-                <span className="shrink-0">
-                  <XIcon />
-                </span>
-                <span>X</span>
-              </button>
-
-              <button
-                onClick={() => openExternalShare("facebook")}
-                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-              >
-                <span className="shrink-0">
-                  <FacebookIcon />
-                </span>
-                <span>Facebook</span>
-              </button>
-
-              <button
-                onClick={() => openExternalShare("email")}
-                className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-white px-4 py-4 text-left text-sm font-medium shadow-sm transition hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-              >
-                <span className="shrink-0">
-                  <EmailIcon />
-                </span>
-                <span>Email</span>
-              </button>
-
-              <button
-                onClick={handleNativeShare}
-                className={`flex items-center gap-3 rounded-2xl border px-4 py-4 text-left text-sm font-medium shadow-sm transition ${
-                  canNativeShare
-                    ? "border-gray-300 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
-                    : "border-gray-200 bg-gray-100 text-gray-500 dark:border-gray-800 dark:bg-white/[0.02] dark:text-gray-500"
-                }`}
-              >
-                <span className="shrink-0">
-                  <MoreAppsIcon />
-                </span>
-                <span>More apps</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {infoOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close" onClick={() => setInfoOpen(false)} />
-          <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-2xl overflow-x-hidden overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h3 className="break-words text-xl font-semibold tracking-tight">About {APP_NAME}</h3>
-                <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">
-                  A mobile-friendly regional intelligence feed, translated into English.
-                </p>
-              </div>
-
-              <button
-                onClick={() => setInfoOpen(false)}
-                className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
-                aria-label="Close modal"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-5 space-y-5 overflow-x-hidden break-words text-sm leading-relaxed">
-              <div className="text-gray-800 dark:text-white/80">
-                <p>
-                  The app brings together public RSS headlines in one clean, easy-to-scan feed and translates them into English.
-                </p>
-                <p className="mt-2">
-                  Overlapping coverage is grouped into a single top story, then translated into English with a short summary so regional developments are easier to follow.
-                </p>
-                <p className="mt-2">
-                  When you want more detail, use the article button to open the original source through Google Translate and read the full story in English.
-                </p>
-                <p className="mt-2">
-                  You can stay on one homepage and switch regional editions instantly without moving to a separate landing page.
-                </p>
-              </div>
-
-              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
-                <div className="font-semibold text-gray-900 dark:text-white">What you can do</div>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600 dark:text-gray-400">
-                  <li>
-                    <span className="text-gray-800 dark:text-white/80">Search quickly:</span> keep search visible on the main screen for fast filtering.
-                  </li>
-                  <li>
-                    <span className="text-gray-800 dark:text-white/80">Open filters when needed:</span> region, subdivision, date range, category, and headline limit are all available in the Filters panel.
-                  </li>
-                  <li>
-                    <span className="text-gray-800 dark:text-white/80">Switch regions over time:</span> Mercosur is live now, with more regional editions planned.
-                  </li>
-                </ul>
-              </div>
-
-              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
-                <div className="font-semibold text-gray-900 dark:text-white">How translation works</div>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  Headlines and summaries are translated into English as stories load, so the feed stays fast and responsive. Cards remain muted until English text is ready.
-                </p>
-              </div>
-
-              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
-                <div className="font-semibold text-gray-900 dark:text-white">Add to Home Screen</div>
-
-                {standalone ? (
-                  <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
-                    <p>You’re already running the app in installed mode.</p>
-                    <p>If you reopen it from your home screen or app launcher, it should continue to open as an app.</p>
-                  </div>
-                ) : installEvent ? (
-                  <div className="mt-2 space-y-3 text-gray-600 dark:text-gray-400">
-                    <p>Your browser supports installing this app for a faster, app-like experience.</p>
-                    <button
-                      onClick={handleInstallClick}
-                      className="inline-flex items-center justify-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
-                    >
-                      Install
-                    </button>
-                    <p>
-                      If you prefer to do it manually, open your browser menu and look for options such as “Install app”, “Add to Home screen”, or “Create shortcut”.
-                    </p>
-                  </div>
-                ) : ios ? (
-                  <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
-                    <p>On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.</p>
-                    <p>If you do not see the option right away, scroll the Share sheet list until “Add to Home Screen” appears.</p>
-                  </div>
-                ) : (
-                  <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
-                    <p>If your browser does not show an install prompt, you can usually add the app manually from the browser menu.</p>
-                    <p>Look for options such as “Install app”, “Add to Home screen”, “Create shortcut”, or “Install this site as an app”.</p>
-                    <p>If you do not see an install prompt, this browser may not currently support app installation for this site.</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
-                <div className="font-semibold text-gray-900 dark:text-white">Why it’s useful</div>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  The app is designed for readers who want a faster way to follow regional developments without having to monitor multiple local-language outlets separately.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </main>
+    </>
   );
 }
