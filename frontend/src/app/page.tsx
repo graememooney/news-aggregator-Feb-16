@@ -138,7 +138,6 @@ const STORAGE_KEYS = {
 } as const;
 
 const DEFAULT_REGION = "mercosur";
-const DEFAULT_SUBDIVISION = "uy";
 const DEFAULT_RANGE = "24h";
 const DEFAULT_CATEGORY: CategoryFilter = "all";
 const DEFAULT_HEADLINE_LIMIT: HeadlineLimit = 30;
@@ -392,13 +391,14 @@ function buildShareableUrl(params: {
   category: CategoryFilter;
   headlineLimit: HeadlineLimit;
   query: string;
+  defaultSubdivisionForRegion: string;
 }) {
   if (typeof window === "undefined") return "";
 
   const sp = new URLSearchParams();
 
   if (params.region !== DEFAULT_REGION) sp.set("region", params.region);
-  if (params.subdivision !== DEFAULT_SUBDIVISION) sp.set("subdivision", params.subdivision);
+  if (params.subdivision !== params.defaultSubdivisionForRegion) sp.set("subdivision", params.subdivision);
   if (params.range !== DEFAULT_RANGE) sp.set("range", params.range);
   if (params.category !== DEFAULT_CATEGORY) sp.set("category", params.category);
   if (params.headlineLimit !== DEFAULT_HEADLINE_LIMIT) sp.set("limit", String(params.headlineLimit));
@@ -447,7 +447,7 @@ function defaultSubdivisionForRegion(regionKey: string, regions: RegionOption[],
     ""
   ).trim();
 
-  return fallback || DEFAULT_SUBDIVISION;
+  return fallback || "all";
 }
 
 export default function Home() {
@@ -459,7 +459,9 @@ export default function Home() {
   const [region, setRegion] = useState<RegionKey>(DEFAULT_REGION);
   const [query, setQuery] = useState("");
   const [range, setRange] = useState(DEFAULT_RANGE);
-  const [subdivision, setSubdivision] = useState<SubdivisionKey>(DEFAULT_SUBDIVISION);
+  const [subdivision, setSubdivision] = useState<SubdivisionKey>(
+    defaultSubdivisionForRegion(DEFAULT_REGION, FALLBACK_REGION_OPTIONS, FALLBACK_MERCOSUR_SUBDIVISIONS)
+  );
   const [category, setCategory] = useState<CategoryFilter>(DEFAULT_CATEGORY);
   const [headlineLimit, setHeadlineLimit] = useState<HeadlineLimit>(DEFAULT_HEADLINE_LIMIT);
 
@@ -520,11 +522,21 @@ export default function Home() {
     return subdivisionLabelForRegion(region, regionOptionsForUi);
   }, [region, regionOptionsForUi]);
 
+  const selectedRegionDefaultSubdivision = useMemo(() => {
+    return defaultSubdivisionForRegion(region, regionOptionsForUi, subdivisionOptions);
+  }, [region, regionOptionsForUi, subdivisionOptions]);
+
   useEffect(() => {
     if (category !== "all" && !topicsInData.has(category)) {
       setCategory("all");
     }
   }, [topicsInData, category]);
+
+  useEffect(() => {
+    if (!subdivisionOptions.some((c) => c.key === subdivision)) {
+      setSubdivision(selectedRegionDefaultSubdivision);
+    }
+  }, [subdivision, subdivisionOptions, selectedRegionDefaultSubdivision]);
 
   function openTranslated(link: string) {
     const target = isLaDiaria(link) ? `${window.location.origin}/api/reader?url=${encodeURIComponent(link)}` : link;
@@ -719,6 +731,7 @@ export default function Home() {
       category,
       headlineLimit,
       query,
+      defaultSubdivisionForRegion: selectedRegionDefaultSubdivision,
     });
   }
 
@@ -990,7 +1003,7 @@ export default function Home() {
   useEffect(() => {
     let savedTheme: "dark" | "light" = "dark";
     let savedRegion = DEFAULT_REGION;
-    let savedSubdivision = DEFAULT_SUBDIVISION;
+    let savedSubdivision = "";
     let savedRange = DEFAULT_RANGE;
     let savedCategory: CategoryFilter = DEFAULT_CATEGORY;
     let savedHeadlineLimit: HeadlineLimit = DEFAULT_HEADLINE_LIMIT;
@@ -1234,12 +1247,13 @@ export default function Home() {
         category,
         headlineLimit,
         query,
+        defaultSubdivisionForRegion: selectedRegionDefaultSubdivision,
       });
       if (nextUrl && `${window.location.pathname}${window.location.search}` !== nextUrl) {
         window.history.replaceState(null, "", nextUrl);
       }
     } catch {}
-  }, [region, subdivision, range, category, headlineLimit, query, prefsReady]);
+  }, [region, subdivision, range, category, headlineLimit, query, prefsReady, selectedRegionDefaultSubdivision]);
 
   useEffect(() => {
     return () => {
@@ -1267,7 +1281,7 @@ export default function Home() {
 
   const hasActiveSearch = query.trim().length > 0;
   const hasNonDefaultRegion = region !== DEFAULT_REGION;
-  const hasNonDefaultSubdivision = subdivision !== DEFAULT_SUBDIVISION;
+  const hasNonDefaultSubdivision = subdivision !== selectedRegionDefaultSubdivision;
   const hasNonDefaultRange = range !== DEFAULT_RANGE;
   const hasNonDefaultCategory = category !== DEFAULT_CATEGORY;
   const hasNonDefaultLimit = headlineLimit !== DEFAULT_HEADLINE_LIMIT;
