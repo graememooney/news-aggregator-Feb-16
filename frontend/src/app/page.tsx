@@ -549,6 +549,12 @@ export default function Home() {
   }, [subdivision, subdivisionOptions, selectedRegionDefaultSubdivision]);
 
   function openTranslated(link: string) {
+    // On iOS, open the article directly so Safari's built-in translate can handle it
+    // (Google Translate redirect doesn't work well on iOS Safari)
+    if (ios) {
+      window.open(link, "_blank");
+      return;
+    }
     const target = isLaDiaria(link) ? `${window.location.origin}/api/reader?url=${encodeURIComponent(link)}` : link;
     const encoded = encodeURIComponent(target);
     window.open(`https://translate.google.com/translate?sl=auto&tl=en&u=${encoded}`, "_blank");
@@ -1391,6 +1397,16 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-auto">
+                {!standalone && (installEvent || ios) ? (
+                  <button
+                    onClick={handleInstallClick}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-full border border-blue-500 bg-blue-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-600 hover:border-blue-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                    <span>Install</span>
+                  </button>
+                ) : null}
+
                 <button
                   onClick={() => setInfoOpen(true)}
                   aria-label="Info"
@@ -1739,7 +1755,7 @@ export default function Home() {
                           : "cursor-not-allowed border-gray-300 bg-gray-300 text-gray-600 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-500"
                       }`}
                     >
-                      Open Translated Article →
+                      {ios ? "Read Original Article →" : "Open Translated Article →"}
                     </button>
                   </div>
                 </div>
