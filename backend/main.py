@@ -1026,7 +1026,26 @@ DEFAULT_UA = (
 )
 
 
+# In-memory feed cache: avoids re-fetching the same RSS URL within a short window
+_FEED_CACHE: Dict[str, Dict[str, Any]] = {}
+_FEED_CACHE_LOCK = threading.Lock()
+
+def _feed_cache_ttl_s() -> int:
+    try:
+        return int((os.getenv("FEED_CACHE_TTL_S") or "300").strip())
+    except Exception:
+        return 300  # 5 minutes default
+
 def _fetch_feed(feed_url: str, timeout_s: int = 12) -> feedparser.FeedParserDict:
+    ttl = _feed_cache_ttl_s()
+    now = time.time()
+
+    # Check cache first
+    with _FEED_CACHE_LOCK:
+        cached = _FEED_CACHE.get(feed_url)
+        if cached and (now - cached["ts"]) < ttl:
+            return cached["data"]
+
     req = urllib.request.Request(
         feed_url,
         headers={
@@ -1038,7 +1057,19 @@ def _fetch_feed(feed_url: str, timeout_s: int = 12) -> feedparser.FeedParserDict
     try:
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             raw = resp.read()
-        return feedparser.parse(raw)
+        parsed = feedparser.parse(raw)
+
+        # Store in cache
+        with _FEED_CACHE_LOCK:
+            _FEED_CACHE[feed_url] = {"ts": now, "data": parsed}
+            # Evict old entries if cache grows too large
+            if len(_FEED_CACHE) > 200:
+                cutoff = now - ttl
+                stale = [k for k, v in _FEED_CACHE.items() if v["ts"] < cutoff]
+                for k in stale:
+                    _FEED_CACHE.pop(k, None)
+
+        return parsed
     except urllib.error.URLError as e:
         raise RuntimeError(f"URL error: {e}")
     except Exception as e:
@@ -3038,12 +3069,14 @@ def get_uruguay_news(range: str = "24h", q: str = "", limit: int = 50):
 
 
 def _collect_items(region: str, subdivision: str, range: str, q: str, scan_cap: int = 999999) -> List[Dict[str, Any]]:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     r = _require_live_region(region)
     s_key = _normalize_subdivision_for_region(r, subdivision)
     since = _range_to_since(range)
 
-    items: List[Dict[str, Any]] = []
-
+    # Filter sources first
+    matched_sources = []
     for source in _sources_for_region(r):
         source_subdivision_key = (source.get("subdivision_key") or source.get("country_key") or "").lower()
 
@@ -3070,11 +3103,27 @@ def _collect_items(region: str, subdivision: str, range: str, q: str, scan_cap: 
             if source_subdivision_key != s_key:
                 continue
 
+        matched_sources.append(source)
+
+    # Fetch all feeds concurrently (up to 10 at a time)
+    def _fetch_source(source):
         try:
             feed = _fetch_feed(source["feed_url"])
+            return (source, feed)
         except Exception:
-            continue
+            return (source, None)
 
+    feed_results = []
+    with ThreadPoolExecutor(max_workers=min(10, max(1, len(matched_sources)))) as pool:
+        futures = {pool.submit(_fetch_source, s): s for s in matched_sources}
+        for future in as_completed(futures):
+            feed_results.append(future.result())
+
+    # Process fetched feeds into articles
+    items: List[Dict[str, Any]] = []
+    for source, feed in feed_results:
+        if feed is None:
+            continue
         for entry in (feed.entries or []):
             article = _build_article(source, entry)
             if not article:
