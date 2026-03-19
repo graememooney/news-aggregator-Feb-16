@@ -284,6 +284,164 @@ SOURCES: List[Dict[str, Any]] = [
         "source_logo": "https://www.jornada.com.mx/favicon.ico",
         "feed_url": "https://www.jornada.com.mx/rss/capital.xml?v=1",
     },
+    {
+        "id": "la_jornada_mx_politica",
+        "name": "La Jornada - Política (MX)",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.jornada.com.mx/favicon.ico",
+        "feed_url": "https://www.jornada.com.mx/rss/politica.xml?v=1",
+    },
+    {
+        "id": "la_jornada_mx_economia",
+        "name": "La Jornada - Economía (MX)",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.jornada.com.mx/favicon.ico",
+        "feed_url": "https://www.jornada.com.mx/rss/economia.xml?v=1",
+    },
+    # --- National feeds (ALL Mexico) ---
+    {
+        "id": "el_financiero_mx",
+        "name": "El Financiero (MX)",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.elfinanciero.com.mx/favicon.ico",
+        "feed_url": "https://www.elfinanciero.com.mx/arc/outboundfeeds/rss/?outputType=xml",
+    },
+    {
+        "id": "el_universal_mx",
+        "name": "El Universal (MX)",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.eluniversal.com.mx/favicon.ico",
+        "feed_url": "https://www.eluniversal.com.mx/arc/outboundfeeds/rss/?outputType=xml",
+    },
+    {
+        "id": "excelsior_mx",
+        "name": "Excélsior (MX)",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.excelsior.com.mx/favicon.ico",
+        "feed_url": "https://www.excelsior.com.mx/rss/nacional",
+    },
+    {
+        "id": "el_sol_de_mexico_mx",
+        "name": "El Sol de México",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.elsoldemexico.com.mx/favicon.ico",
+        "feed_url": "https://www.elsoldemexico.com.mx/rss.xml",
+    },
+    {
+        "id": "expansion_mx",
+        "name": "Expansión (MX)",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://expansion.mx/favicon.ico",
+        "feed_url": "https://expansion.mx/rss",
+    },
+    {
+        "id": "reforma_mx",
+        "name": "Reforma (MX)",
+        "region_key": "mexico",
+        "subdivision_key": "all",
+        "country_key": "all",
+        "subdivision_code": "ALL",
+        "country_code": "ALL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.reforma.com/favicon.ico",
+        "feed_url": "https://www.reforma.com/rss/portada.xml",
+    },
+    # --- State feeds ---
+    {
+        "id": "informador_jalisco",
+        "name": "El Informador (Jalisco)",
+        "region_key": "mexico",
+        "subdivision_key": "jalisco",
+        "country_key": "jalisco",
+        "subdivision_code": "JAL",
+        "country_code": "JAL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.informador.mx/favicon.ico",
+        "feed_url": "https://www.informador.mx/rss/jalisco.xml",
+    },
+    {
+        "id": "el_norte_nuevo_leon",
+        "name": "El Norte (Nuevo León)",
+        "region_key": "mexico",
+        "subdivision_key": "nuevo-leon",
+        "country_key": "nuevo-leon",
+        "subdivision_code": "NL",
+        "country_code": "NL",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.elnorte.com/favicon.ico",
+        "feed_url": "https://www.elnorte.com/rss/portada.xml",
+    },
+    {
+        "id": "el_sol_de_toluca_edomex",
+        "name": "El Sol de Toluca (Edomex)",
+        "region_key": "mexico",
+        "subdivision_key": "edomex",
+        "country_key": "edomex",
+        "subdivision_code": "MEX",
+        "country_code": "MEX",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://oem.com.mx/elsoldetoluca/favicon.ico",
+        "feed_url": "https://oem.com.mx/elsoldetoluca/rss.xml",
+    },
+    {
+        "id": "diario_de_yucatan",
+        "name": "Diario de Yucatán",
+        "region_key": "mexico",
+        "subdivision_key": "yucatan",
+        "country_key": "yucatan",
+        "subdivision_code": "YUC",
+        "country_code": "YUC",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.yucatan.com.mx/favicon.ico",
+        "feed_url": "https://www.yucatan.com.mx/feed/",
+    },
 ]
 
 DEFAULT_REGION_KEY = "mercosur"
@@ -2607,8 +2765,7 @@ def _collect_items(region: str, subdivision: str, range: str, q: str, scan_cap: 
                     continue
         elif r == "mexico":
             if s_key == "all":
-                if source_subdivision_key not in {"all", "cdmx"}:
-                    continue
+                pass  # include all Mexico feeds regardless of subdivision
             else:
                 if source_subdivision_key not in {s_key, "all"}:
                     continue
@@ -3149,7 +3306,7 @@ def _worker_loop() -> None:
 
     subdivisions = _env_list("PRE_ENRICH_SUBDIVISIONS", "")
     if not subdivisions:
-        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,mp,all,cdmx")
+        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,mp,all,cdmx,jalisco,nuevo-leon,edomex,yucatan")
     if not subdivisions:
         subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all", "cdmx"]
 
