@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mercosur News",
-  description: "Mercosur news intelligence feed",
+  title: "Regional Pulse News",
+  description: "Regional news intelligence feed, translated into English",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -72,14 +72,14 @@ export default function RootLayout({
         <ServiceWorkerRegisterScript />
 
         <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
-        <meta name="theme-color" content="#f5f5f4" media="(prefers-color-scheme: light)" />
+        <meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-stone-100 text-black dark:bg-black dark:text-white min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#faf9f7] text-gray-950 dark:bg-black dark:text-white min-h-screen`}
       >
         {children}
       </body>

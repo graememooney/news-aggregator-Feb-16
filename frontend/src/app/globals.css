@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Warm off-white body background in light mode */
+  :root {
+    --background: #faf9f7;
+    --card-bg: #ffffff;
+  }
+  .dark {
+    --background: #000000;
+    --card-bg: rgba(255, 255, 255, 0.02);
+  }
+}

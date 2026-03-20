@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 type Article = {
   title: string;
@@ -1362,7 +1362,14 @@ export default function Home() {
   const selectedRegionName = regionOptionsForUi.find((r) => r.key === region)?.name || "Mercosur";
   const selectedSubdivisionName = subdivisionOptions.find((c) => c.key === subdivision)?.name || "News";
 
-  const subscribeInsertIndex = filteredClusters.length >= 4 ? 3 : -1;
+  // Show subscribe banner after the 2 featured cards, then every 8 cards
+  const SUBSCRIBE_BANNER_FIRST = 2;
+  const SUBSCRIBE_BANNER_INTERVAL = 8;
+  function shouldShowBanner(idx: number): boolean {
+    if (filteredClusters.length < 4) return false;
+    if (idx === SUBSCRIBE_BANNER_FIRST) return true;
+    return idx > SUBSCRIBE_BANNER_FIRST && (idx - SUBSCRIBE_BANNER_FIRST) % SUBSCRIBE_BANNER_INTERVAL === 0;
+  }
 
   return (
     <>
@@ -1450,7 +1457,7 @@ export default function Home() {
                         : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]"
                     }`}
                   >
-                    <div className="flex min-h-[48px] flex-col items-center justify-center gap-1.5 sm:min-h-[52px]">
+                    <div className="flex min-h-[52px] flex-col items-center justify-center gap-1.5 sm:min-h-[56px]">
                       <span
                         className={`block text-center text-[13px] font-semibold tracking-tight sm:text-[15px] ${
                           regionOption.key === "central-america" ? "leading-tight" : "truncate"
@@ -1626,9 +1633,10 @@ export default function Home() {
           ) : null}
         </section>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
           {filteredClusters.map((c, index) => {
             const a = c.best_item;
+            const isFeatured = index < 2;
 
             const src = (a.source || "").trim();
             const logoFailed = failedLogosRef.current.has(src);
@@ -1647,9 +1655,9 @@ export default function Home() {
             const displayFlag = a.subdivision_flag_url || a.country_flag_url || "";
 
             return (
-              <div key={c.cluster_id}>
-                {subscribeInsertIndex === index ? (
-                  <section className="mb-6 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-black/40 dark:to-amber-500/10">
+              <Fragment key={c.cluster_id}>
+                {shouldShowBanner(index) ? (
+                  <section className="lg:col-span-2 rounded-3xl border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-black/40 dark:to-amber-500/10">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="min-w-0">
                         <div className="inline-flex items-center rounded-full border border-amber-300 bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-white/5 dark:text-amber-300">
@@ -1680,7 +1688,9 @@ export default function Home() {
                     cardRefs.current[a.link] = el;
                   }}
                   data-link={a.link}
-                  className={`rounded-3xl border p-5 shadow-sm transition sm:p-6 ${
+                  className={`rounded-3xl border shadow-sm transition ${
+                    isFeatured ? "lg:col-span-2 p-6 sm:p-8" : "p-5 sm:p-6"
+                  } ${
                     translatedReady
                       ? "border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.02]"
                       : "border-gray-200 bg-gray-50/80 opacity-70 dark:border-gray-800 dark:bg-white/[0.03]"
@@ -1718,8 +1728,12 @@ export default function Home() {
 
                   {translatedReady ? (
                     <>
-                      <h3 className="text-xl font-semibold leading-snug tracking-tight text-gray-950 dark:text-white">{a.title_en}</h3>
-                      <p className="mt-3 text-[15px] leading-7 text-gray-700 dark:text-white/75">{a.summary_en}</p>
+                      <h3 className={`font-semibold leading-snug tracking-tight text-gray-950 dark:text-white ${
+                        isFeatured ? "text-2xl sm:text-[1.7rem]" : "text-xl"
+                      }`}>{a.title_en}</h3>
+                      <p className={`mt-3 leading-7 text-gray-800 dark:text-white/80 ${
+                        isFeatured ? "text-base" : "text-[15px]"
+                      }`}>{a.summary_en}</p>
                     </>
                   ) : st === "error" ? (
                     <>
@@ -1737,29 +1751,29 @@ export default function Home() {
                     </>
                   ) : (
                     <div className="animate-pulse space-y-3">
-                      <div className="h-6 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                      <div className={`w-5/6 rounded bg-gray-200 dark:bg-gray-700 ${isFeatured ? "h-7" : "h-6"}`} />
                       <div className="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
                       <div className="h-3 w-4/6 rounded bg-gray-200 dark:bg-gray-700" />
                     </div>
                   )}
 
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{formatPublishedUTC(a)}</p>
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{formatPublishedUTC(a)}</p>
 
                     <button
                       onClick={() => openTranslated(a.link)}
                       disabled={!translatedReady}
-                      className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium transition ${
+                      className={`inline-flex items-center rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
                         translatedReady
-                          ? "border-gray-900 bg-gray-900 text-white hover:opacity-90 dark:border-white dark:bg-white dark:text-black"
-                          : "cursor-not-allowed border-gray-300 bg-gray-300 text-gray-600 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-500"
+                          ? "border-blue-600 bg-blue-600 text-white shadow-sm hover:bg-blue-700 hover:border-blue-700 dark:border-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600 dark:hover:border-blue-600"
+                          : "cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-500"
                       }`}
                     >
                       {ios ? "Read Original Article →" : "Open Translated Article →"}
                     </button>
                   </div>
                 </div>
-              </div>
+              </Fragment>
             );
           })}
         </div>
