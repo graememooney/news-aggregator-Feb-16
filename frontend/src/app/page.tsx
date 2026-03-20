@@ -1334,6 +1334,8 @@ export default function Home() {
     }
 
     setRegion(nextRegion);
+    setClusters([]);
+    setLoadError(null);
 
     const nextSubdivisions = await fetchSubdivisionsForRegion(nextRegion);
     setSubdivisionsData(nextSubdivisions);
@@ -1346,6 +1348,8 @@ export default function Home() {
 
   async function handleSubdivisionChange(nextSubdivision: string) {
     setSubdivision(nextSubdivision);
+    setClusters([]);
+    setLoadError(null);
     await loadTopStories(region, range, nextSubdivision, headlineLimit);
   }
 
