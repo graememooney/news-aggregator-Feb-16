@@ -1638,7 +1638,7 @@ export default function Home() {
         </section>
 
         <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2 lg:gap-6">
-          {filteredClusters.map((c, index) => {
+          {loading ? null : filteredClusters.map((c, index) => {
             const a = c.best_item;
             const isFeatured = index < 2;
 
