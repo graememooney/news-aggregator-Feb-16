@@ -1374,10 +1374,10 @@ export default function Home() {
   return (
     <>
       <main className="mx-auto max-w-6xl overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
-        <section className="relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/80 px-5 py-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/40 sm:px-7 sm:py-7">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.10),transparent_32%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.12),transparent_32%)]" />
+        <section className="relative overflow-hidden rounded-3xl border border-blue-100/60 bg-gradient-to-br from-white/90 via-blue-50/30 to-indigo-50/40 px-5 py-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-gradient-to-br dark:from-black/40 dark:via-black/40 dark:to-black/40 sm:px-7 sm:py-7">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.18),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.14),transparent_38%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.12),transparent_32%)]" />
 
-          <div className="pointer-events-none absolute right-[-40px] top-[-30px] hidden h-52 w-52 opacity-[0.10] md:block">
+          <div className="pointer-events-none absolute right-[-40px] top-[-30px] hidden h-52 w-52 opacity-[0.07] dark:opacity-[0.10] md:block">
             <img src={BRAND_LOGO_PATH} alt="" className="h-full w-full object-contain" />
           </div>
 
@@ -1435,7 +1435,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mt-3 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
+        <section className="mt-3 rounded-3xl border border-gray-200/60 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
           <div className="flex flex-col gap-3">
             <div>
               <h2 className="text-base font-semibold text-gray-950 dark:text-white sm:text-lg">Choose your region</h2>
@@ -1489,7 +1489,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mt-4 rounded-3xl border border-gray-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
+        <section className="mt-4 rounded-3xl border border-gray-200/60 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <div className="flex-1">
@@ -1560,7 +1560,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="mt-5 flex flex-col gap-4 rounded-3xl border border-gray-200 bg-white/80 p-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-6">
+        <section className="mt-5 flex flex-col gap-4 rounded-3xl border border-gray-200/60 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-3">

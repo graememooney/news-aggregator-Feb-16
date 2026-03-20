@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  /* Warm off-white body background in light mode */
   :root {
     --background: #faf9f7;
     --card-bg: #ffffff;
@@ -11,5 +10,17 @@
   .dark {
     --background: #000000;
     --card-bg: rgba(255, 255, 255, 0.02);
+  }
+
+  /* Light mode: warm off-white with subtle gradient depth */
+  html:not(.dark) body {
+    background: linear-gradient(
+      168deg,
+      #faf9f7 0%,
+      #f5f0eb 35%,
+      #f0ebe5 65%,
+      #ede7df 100%
+    );
+    background-attachment: fixed;
   }
 }
