@@ -3091,13 +3091,13 @@ def _collect_items(region: str, subdivision: str, range: str, q: str, scan_cap: 
             if s_key == "all":
                 pass  # include all Mexico feeds regardless of subdivision
             else:
-                if source_subdivision_key not in {s_key, "all"}:
+                if source_subdivision_key != s_key:
                     continue
         elif r == "central-america":
             if s_key == "all":
                 pass  # include all Central America feeds regardless of subdivision
             else:
-                if source_subdivision_key not in {s_key, "all"}:
+                if source_subdivision_key != s_key:
                     continue
         else:
             if source_subdivision_key != s_key:
