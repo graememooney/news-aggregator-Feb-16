@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Article = {
   title: string;
@@ -482,9 +482,39 @@ export default function Home() {
   const [prefsReady, setPrefsReady] = useState(false);
   const [showStartupSplash, setShowStartupSplash] = useState(true);
 
-  const [infoOpen, setInfoOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [infoOpen, setInfoOpenRaw] = useState(false);
+  const [shareOpen, setShareOpenRaw] = useState(false);
+  const [filtersOpen, setFiltersOpenRaw] = useState(false);
+
+  // Back button closes modals instead of leaving the site.
+  // Push a history entry when opening; pop it when closing.
+  const setInfoOpen = useCallback((open: boolean) => {
+    if (open) { window.history.pushState({ modal: "info" }, ""); }
+    else if (window.history.state?.modal === "info") { window.history.back(); }
+    setInfoOpenRaw(open);
+  }, []);
+
+  const setShareOpen = useCallback((open: boolean) => {
+    if (open) { window.history.pushState({ modal: "share" }, ""); }
+    else if (window.history.state?.modal === "share") { window.history.back(); }
+    setShareOpenRaw(open);
+  }, []);
+
+  const setFiltersOpen = useCallback((open: boolean) => {
+    if (open) { window.history.pushState({ modal: "filters" }, ""); }
+    else if (window.history.state?.modal === "filters") { window.history.back(); }
+    setFiltersOpenRaw(open);
+  }, []);
+
+  useEffect(() => {
+    function onPopState() {
+      if (filtersOpen) setFiltersOpenRaw(false);
+      if (infoOpen) setInfoOpenRaw(false);
+      if (shareOpen) setShareOpenRaw(false);
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [filtersOpen, infoOpen, shareOpen]);
 
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [standalone, setStandalone] = useState(false);
@@ -1496,11 +1526,11 @@ export default function Home() {
         <section className="mt-4 rounded-3xl border border-gray-200/60 bg-white/70 p-4 shadow-sm backdrop-blur-sm dark:border-gray-800 dark:bg-black/30 sm:p-5">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
-              <div className="flex-1">
+              <div className="relative flex-1">
                 <label className="sr-only">Search</label>
                 <input
                   ref={searchInputRef}
-                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-sm text-black shadow-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 pr-9 text-sm text-black shadow-sm placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                   placeholder="Search headlines & summaries"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -1511,6 +1541,16 @@ export default function Home() {
                     }
                   }}
                 />
+                {query && (
+                  <button
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    onClick={() => { setQuery(""); searchInputRef.current?.focus(); }}
+                    title="Clear search"
+                    type="button"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </button>
+                )}
               </div>
 
               <button
