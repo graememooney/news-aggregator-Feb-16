@@ -981,7 +981,7 @@ export default function MercosurPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
-              Your Source for English Regional Information
+              Regional News, Translated for You
             </p>
           </div>
 
@@ -1426,7 +1426,7 @@ export default function MercosurPage() {
               <div className="min-w-0">
                 <h3 className="break-words text-xl font-semibold tracking-tight">About Mercosur News</h3>
                 <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">
-                  A mobile-friendly regional intelligence feed for Mercosur headlines, translated into English.
+                  A mobile-friendly regional news feed for Mercosur headlines, translated into English.
                 </p>
               </div>
 

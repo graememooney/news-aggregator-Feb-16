@@ -144,7 +144,7 @@ const DEFAULT_HEADLINE_LIMIT: HeadlineLimit = 30;
 const DEFAULT_QUERY = "";
 
 const APP_NAME = "Regional Pulse News";
-const APP_TAGLINE = "Your Source for English Regional Intelligence";
+const APP_TAGLINE = "Regional News, Translated for You";
 const BRAND_LOGO_PATH = "/regional-pulse-logo.png";
 
 type ShareNavigator = Navigator & {
@@ -1999,7 +1999,7 @@ export default function Home() {
                 <div className="min-w-0">
                   <h3 className="break-words text-xl font-semibold tracking-tight">About {APP_NAME}</h3>
                   <p className="mt-1 break-words text-sm text-gray-600 dark:text-gray-400">
-                    A mobile-friendly regional intelligence feed, translated into English.
+                    A mobile-friendly regional news feed, translated into English.
                   </p>
                 </div>
 

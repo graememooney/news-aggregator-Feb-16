@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Regional Pulse News",
-  description: "Regional news intelligence feed, translated into English",
+  description: "Regional news, translated into English",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
