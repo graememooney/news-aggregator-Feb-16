@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/mercosur",
+        destination: "/?region=mercosur",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
