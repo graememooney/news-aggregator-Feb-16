@@ -863,7 +863,7 @@ export default function Home() {
       if (!res.ok) {
         setClusters([]);
         setFreshnessAgeS(null);
-        setLoadError({ message: "We couldn’t load headlines right now.", status: res.status });
+        setLoadError({ message: "We couldn't load headlines right now.", status: res.status });
       } else {
         const list: Cluster[] = (data?.clusters || []) as Cluster[];
         setClusters(list);
@@ -878,7 +878,7 @@ export default function Home() {
     } catch {
       setClusters([]);
       setFreshnessAgeS(null);
-      setLoadError({ message: "We couldn’t load headlines right now.", status: 0 });
+      setLoadError({ message: "We couldn't load headlines right now.", status: 0 });
     } finally {
       setLoading(false);
     }
@@ -1600,7 +1600,7 @@ export default function Home() {
                 <div className="text-sm text-gray-800 dark:text-white/80">
                   <div className="font-semibold">Service temporarily unavailable</div>
                   <div className="mt-1 text-gray-600 dark:text-gray-400">
-                    We couldn’t load headlines right now. Please try again in a moment.
+                    We couldn't load headlines right now. Please try again in a moment.
                   </div>
                   {typeof loadError.status === "number" && loadError.status ? (
                     <div className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">Error code: {loadError.status}</div>
@@ -2015,16 +2015,7 @@ export default function Home() {
               <div className="mt-5 space-y-5 overflow-x-hidden break-words text-sm leading-relaxed">
                 <div className="text-gray-800 dark:text-white/80">
                   <p>
-                    The app brings together public RSS headlines in one clean, easy-to-scan feed and translates them into English.
-                  </p>
-                  <p className="mt-2">
-                    Overlapping coverage is grouped into a single top story, then translated into English with a short summary so regional developments are easier to follow.
-                  </p>
-                  <p className="mt-2">
-                    When you want more detail, use the article button to open the original source through Google Translate and read the full story in English.
-                  </p>
-                  <p className="mt-2">
-                    You can stay on one homepage and switch regional editions instantly without moving to a separate landing page.
+                    Follow regional news in English without juggling a dozen local-language sites. The app pulls in public RSS headlines, groups overlapping coverage into a single story card with a short English summary, and lets you switch between regional editions from one page.
                   </p>
                 </div>
 
@@ -2032,22 +2023,46 @@ export default function Home() {
                   <div className="font-semibold text-gray-900 dark:text-white">What you can do</div>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600 dark:text-gray-400">
                     <li>
-                      <span className="text-gray-800 dark:text-white/80">Search quickly:</span> keep search visible on the main screen for fast filtering.
+                      <span className="text-gray-800 dark:text-white/80">Switch regions instantly:</span> jump between available regional editions without leaving the page.
                     </li>
                     <li>
-                      <span className="text-gray-800 dark:text-white/80">Open filters when needed:</span> region, subdivision, date range, category, and headline limit are all available in the Filters panel.
+                      <span className="text-gray-800 dark:text-white/80">Search in English:</span> search stays visible on the main screen for quick filtering across translated headlines.
                     </li>
                     <li>
-                      <span className="text-gray-800 dark:text-white/80">Switch regions over time:</span> Mercosur and Mexico are live now, with more regional editions planned.
+                      <span className="text-gray-800 dark:text-white/80">Filter by what matters:</span> region, subdivision, date range, category, and headline limit are all in the Filters panel.
+                    </li>
+                    <li>
+                      <span className="text-gray-800 dark:text-white/80">Read full articles:</span> tap the article button to open the original source in English (see "How translation works" below).
                     </li>
                   </ul>
                 </div>
 
                 <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
+                  <div className="font-semibold text-gray-900 dark:text-white">Story grouping</div>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
+                    When multiple outlets cover the same story, the app groups them into a single card so you get one clean summary instead of a wall of duplicates. You can still see every source behind the story.
+                  </p>
+                </div>
+
+                <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
                   <div className="font-semibold text-gray-900 dark:text-white">How translation works</div>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    Headlines and summaries are translated into English as stories load, so the feed stays fast and responsive. Cards remain muted until English text is ready.
+                    Headlines and summaries are translated into English automatically as stories load. Cards stay muted until the English text is ready so the feed always looks clean.
                   </p>
+                  <p className="mt-2 text-gray-600 dark:text-gray-400">
+                    For full articles, it depends on your device:
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600 dark:text-gray-400">
+                    <li>
+                      <span className="text-gray-800 dark:text-white/80">iPhone / iPad (Safari):</span> articles open in their original language. Tap the <span className="font-medium">aA</span> button in the address bar and choose "Translate to English" for a native, clean translation.
+                    </li>
+                    <li>
+                      <span className="text-gray-800 dark:text-white/80">Android / Chrome:</span> articles open through Google Translate so you see the full story in English automatically.
+                    </li>
+                    <li>
+                      <span className="text-gray-800 dark:text-white/80">Desktop browsers:</span> articles open through Google Translate. Most browsers also offer a built-in translate option in the address bar.
+                    </li>
+                  </ul>
                 </div>
 
                 <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
@@ -2055,7 +2070,7 @@ export default function Home() {
 
                   {standalone ? (
                     <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
-                      <p>You’re already running the app in installed mode.</p>
+                      <p>You're already running the app in installed mode.</p>
                       <p>If you reopen it from your home screen or app launcher, it should continue to open as an app.</p>
                     </div>
                   ) : installEvent ? (
@@ -2068,27 +2083,27 @@ export default function Home() {
                         Install
                       </button>
                       <p>
-                        If you prefer to do it manually, open your browser menu and look for options such as “Install app”, “Add to Home screen”, or “Create shortcut”.
+                        If you prefer to do it manually, open your browser menu and look for options such as "Install app", "Add to Home screen", or "Create shortcut".
                       </p>
                     </div>
                   ) : ios ? (
                     <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
-                      <p>On iPhone or iPad, open this site in Safari, tap Share, then choose “Add to Home Screen”.</p>
-                      <p>If you do not see the option right away, scroll the Share sheet list until “Add to Home Screen” appears.</p>
+                      <p>On iPhone or iPad, open this site in Safari, tap Share, then choose "Add to Home Screen".</p>
+                      <p>If you do not see the option right away, scroll the Share sheet list until "Add to Home Screen" appears.</p>
                     </div>
                   ) : (
                     <div className="mt-2 space-y-2 text-gray-600 dark:text-gray-400">
                       <p>If your browser does not show an install prompt, you can usually add the app manually from the browser menu.</p>
-                      <p>Look for options such as “Install app”, “Add to Home screen”, “Create shortcut”, or “Install this site as an app”.</p>
+                      <p>Look for options such as "Install app", "Add to Home screen", "Create shortcut", or "Install this site as an app".</p>
                       <p>If you do not see an install prompt, this browser may not currently support app installation for this site.</p>
                     </div>
                   )}
                 </div>
 
                 <div className="border-t border-gray-200 pt-5 dark:border-gray-800">
-                  <div className="font-semibold text-gray-900 dark:text-white">Why it’s useful</div>
+                  <div className="font-semibold text-gray-900 dark:text-white">Why it exists</div>
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
-                    The app is designed for readers who want a faster way to follow regional developments without having to monitor multiple local-language outlets separately.
+                    Regional news matters, but most of it never gets translated. This app fixes that: one feed, multiple countries, everything in English. No accounts, no paywalls, no clutter.
                   </p>
                 </div>
               </div>
