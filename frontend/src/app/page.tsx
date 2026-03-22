@@ -485,6 +485,15 @@ export default function Home() {
   const [infoOpen, setInfoOpenRaw] = useState(false);
   const [shareOpen, setShareOpenRaw] = useState(false);
   const [filtersOpen, setFiltersOpenRaw] = useState(false);
+  const [feedbackOpen, setFeedbackOpenRaw] = useState(false);
+
+  // Feedback form state
+  const [fbName, setFbName] = useState("");
+  const [fbEmail, setFbEmail] = useState("");
+  const [fbMessage, setFbMessage] = useState("");
+  const [fbSending, setFbSending] = useState(false);
+  const [fbSent, setFbSent] = useState(false);
+  const [fbError, setFbError] = useState("");
 
   // Back button closes modals instead of leaving the site.
   // Push a history entry when opening; pop it when closing.
@@ -506,15 +515,46 @@ export default function Home() {
     setFiltersOpenRaw(open);
   }, []);
 
+  const setFeedbackOpen = useCallback((open: boolean) => {
+    if (open) { window.history.pushState({ modal: "feedback" }, ""); }
+    else if (window.history.state?.modal === "feedback") { window.history.back(); }
+    setFeedbackOpenRaw(open);
+    if (open) { setFbSent(false); setFbError(""); }
+  }, []);
+
   useEffect(() => {
     function onPopState() {
       if (filtersOpen) setFiltersOpenRaw(false);
       if (infoOpen) setInfoOpenRaw(false);
       if (shareOpen) setShareOpenRaw(false);
+      if (feedbackOpen) setFeedbackOpenRaw(false);
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [filtersOpen, infoOpen, shareOpen]);
+  }, [filtersOpen, infoOpen, shareOpen, feedbackOpen]);
+
+  async function handleFeedbackSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFbSending(true);
+    setFbError("");
+    try {
+      const res = await fetch("https://formspree.io/f/xwvrjygl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ name: fbName, email: fbEmail, message: fbMessage }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.errors?.map((e: any) => e.message).join(", ") || "Something went wrong. Please try again.");
+      }
+      setFbSent(true);
+      setFbName(""); setFbEmail(""); setFbMessage("");
+    } catch (err: any) {
+      setFbError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setFbSending(false);
+    }
+  }
 
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [standalone, setStandalone] = useState(false);
@@ -1457,12 +1497,19 @@ export default function Home() {
                 </button>
 
                 <button
+                  onClick={() => setFeedbackOpen(true)}
+                  aria-label="Feedback"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-blue-600 shadow-sm transition hover:border-blue-300 hover:text-blue-500 dark:border-gray-700 dark:bg-black dark:text-blue-400"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4"><path fillRule="evenodd" d="M3.43 2.524A41.29 41.29 0 0110 2c2.236 0 4.43.18 6.57.524 1.437.231 2.43 1.49 2.43 2.902v5.148c0 1.413-.993 2.67-2.43 2.902a41.102 41.102 0 01-3.55.414c-.28.02-.521.18-.643.413l-1.712 3.293a.75.75 0 01-1.33 0l-1.713-3.293a.783.783 0 00-.642-.413 41.108 41.108 0 01-3.55-.414C1.993 13.245 1 11.986 1 10.574V5.426c0-1.413.993-2.67 2.43-2.902z" clipRule="evenodd" /></svg>
+                </button>
+
+                <button
                   onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:bg-black dark:text-white dark:hover:bg-white/[0.04]"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-blue-600 shadow-sm transition hover:border-blue-300 hover:text-blue-500 dark:border-gray-700 dark:bg-black dark:text-blue-400"
                   aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
                 >
                   {mounted ? theme === "dark" ? <SunIcon /> : <MoonIcon /> : <MoonIcon />}
-                  <span>{mounted ? (theme === "dark" ? "Light" : "Dark") : "Theme"}</span>
                 </button>
               </div>
             </div>
@@ -2027,6 +2074,92 @@ export default function Home() {
                   <span>More apps</span>
                 </button>
               </div>
+            </div>
+          </div>
+        ) : null}
+
+        {feedbackOpen ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close" onClick={() => setFeedbackOpen(false)} />
+            <div className="relative max-h-[85vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="text-xl font-semibold tracking-tight">Send Feedback</h3>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Found a bug, have an idea, or just want to say hello? We'd love to hear from you.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setFeedbackOpen(false)}
+                  className="shrink-0 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-medium hover:opacity-90 dark:border-gray-700"
+                  aria-label="Close modal"
+                >
+                  Close
+                </button>
+              </div>
+
+              {fbSent ? (
+                <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5 text-center dark:border-green-800 dark:bg-green-900/20">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mx-auto h-8 w-8 text-green-600 dark:text-green-400"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" /></svg>
+                  <p className="mt-2 font-semibold text-green-800 dark:text-green-200">Thank you!</p>
+                  <p className="mt-1 text-sm text-green-700 dark:text-green-300">Your feedback has been sent. We appreciate you taking the time.</p>
+                  <button
+                    onClick={() => setFeedbackOpen(false)}
+                    className="mt-4 rounded-full border border-green-300 px-4 py-1.5 text-sm font-medium text-green-800 transition hover:bg-green-100 dark:border-green-700 dark:text-green-200 dark:hover:bg-green-900/40"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleFeedbackSubmit} className="mt-5 space-y-4">
+                  <div>
+                    <label htmlFor="fb-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                    <input
+                      id="fb-name"
+                      type="text"
+                      required
+                      value={fbName}
+                      onChange={(e) => setFbName(e.target.value)}
+                      placeholder="Your name"
+                      className="mt-1 block w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-black dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="fb-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                    <input
+                      id="fb-email"
+                      type="email"
+                      required
+                      value={fbEmail}
+                      onChange={(e) => setFbEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="mt-1 block w-full rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-black dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="fb-message" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
+                    <textarea
+                      id="fb-message"
+                      required
+                      rows={4}
+                      value={fbMessage}
+                      onChange={(e) => setFbMessage(e.target.value)}
+                      placeholder="What's on your mind?"
+                      className="mt-1 block w-full resize-y rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-black dark:text-white dark:focus:border-blue-400 dark:focus:ring-blue-400"
+                    />
+                  </div>
+                  {fbError ? (
+                    <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">{fbError}</p>
+                  ) : null}
+                  <button
+                    type="submit"
+                    disabled={fbSending}
+                    className="inline-flex w-full items-center justify-center rounded-full border border-gray-900 bg-gray-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:opacity-90 disabled:opacity-50 dark:border-white dark:bg-white dark:text-black"
+                  >
+                    {fbSending ? "Sending…" : "Send Feedback"}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         ) : null}

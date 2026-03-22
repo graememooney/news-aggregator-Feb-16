@@ -3845,6 +3845,57 @@ def worker_status():
         }
 
 
+# ----------------------------
+# Feedback / Contact form
+# ----------------------------
+
+class FeedbackRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    email: str = Field(..., min_length=3, max_length=200)
+    message: str = Field(..., min_length=1, max_length=5000)
+
+
+def _send_feedback_email(name: str, email: str, message: str) -> None:
+    """Send feedback via SMTP to the configured inbox."""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    smtp_user = os.getenv("FEEDBACK_EMAIL", "").strip()
+    smtp_pass = os.getenv("FEEDBACK_EMAIL_APP_PASSWORD", "").strip()
+    smtp_to = os.getenv("FEEDBACK_EMAIL_TO", smtp_user).strip()
+
+    if not smtp_user or not smtp_pass:
+        raise RuntimeError("Feedback email not configured on server")
+
+    msg = MIMEMultipart()
+    msg["From"] = smtp_user
+    msg["To"] = smtp_to
+    msg["Subject"] = f"[Regional Pulse News] Feedback from {name}"
+    msg["Reply-To"] = email
+
+    body = (
+        f"Name: {name}\n"
+        f"Email: {email}\n"
+        f"---\n\n"
+        f"{message}\n"
+    )
+    msg.attach(MIMEText(body, "plain"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(smtp_user, [smtp_to], msg.as_string())
+
+
+@app.post("/feedback")
+def submit_feedback(req: FeedbackRequest):
+    try:
+        _send_feedback_email(req.name, req.email, req.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send feedback: {e}")
+    return {"ok": True, "message": "Feedback received. Thank you!"}
+
+
 @app.on_event("startup")
 def _start_worker():
     global _worker_thread
