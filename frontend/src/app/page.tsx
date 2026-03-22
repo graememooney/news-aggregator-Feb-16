@@ -1643,10 +1643,10 @@ export default function Home() {
         </section>
 
         {subscribed ? (
-          <div className="mt-3 flex items-center justify-between rounded-2xl border border-green-200 bg-green-50/80 px-4 py-2.5 dark:border-green-800 dark:bg-green-500/10">
-            <div className="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4 text-green-600 dark:text-green-400"><path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm3.844-8.791a.75.75 0 00-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 10-1.114 1.004l2.25 2.5a.75.75 0 001.152-.043l4.25-5.5z" clipRule="evenodd" /></svg>
-              <span className="text-sm font-medium text-green-800 dark:text-green-300">Ad-free subscriber</span>
+          <div className="mt-3 flex items-center justify-between rounded-2xl border border-green-200 bg-green-50/80 px-3 py-1.5 dark:border-green-800 dark:bg-green-500/10">
+            <div className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 text-green-600 dark:text-green-400"><path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm3.844-8.791a.75.75 0 00-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 10-1.114 1.004l2.25 2.5a.75.75 0 001.152-.043l4.25-5.5z" clipRule="evenodd" /></svg>
+              <span className="text-xs font-medium text-green-800 dark:text-green-300">Ad-free subscriber</span>
             </div>
             <button
               onClick={handleManageSubscription}
