@@ -1889,25 +1889,26 @@ export default function Home() {
             return (
               <Fragment key={c.cluster_id}>
                 {shouldShowBanner(index) ? (
-                  <section className="lg:col-span-2 rounded-3xl border border-gray-200/60 bg-gradient-to-r from-gray-50 via-white to-gray-50 p-5 shadow-sm dark:border-gray-800 dark:from-gray-900/50 dark:via-black/40 dark:to-gray-900/50">
-                    <div className="flex flex-col items-center gap-3 text-center py-2">
-                      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                        <span className="h-px w-6 bg-gray-300 dark:bg-gray-700" />
-                        Advertisement
-                        <span className="h-px w-6 bg-gray-300 dark:bg-gray-700" />
+                  <button
+                    onClick={() => setSubscribeOpen(true)}
+                    className="lg:col-span-2 group cursor-pointer rounded-3xl border border-blue-200/60 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 shadow-sm transition hover:shadow-md hover:border-blue-300 dark:border-blue-500/20 dark:from-blue-950/40 dark:via-black/60 dark:to-indigo-950/30 dark:hover:border-blue-500/40"
+                    type="button"
+                  >
+                    <div className="flex flex-col items-center gap-3 py-1">
+                      <div className="flex items-center gap-3">
+                        <img src={BRAND_LOGO_PATH} alt="" className="h-10 w-10 rounded-xl shadow-sm" />
+                        <div className="text-left">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">Love Regional Pulse News?</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Subscribe to go ad-free and support this app</p>
+                        </div>
                       </div>
-                      <div className="flex h-16 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 px-8 dark:border-gray-700 dark:bg-white/[0.02] w-full max-w-lg">
-                        <p className="text-sm text-gray-400 dark:text-gray-500">Ad space</p>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center rounded-full bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition group-hover:bg-blue-700">
+                          Subscribe from $1.29/mo
+                        </span>
                       </div>
-                      <button
-                        onClick={() => setSubscribeOpen(true)}
-                        className="mt-1 text-sm font-medium text-blue-600 underline underline-offset-2 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                        type="button"
-                      >
-                        Subscribe to go ad-free and support this app
-                      </button>
                     </div>
-                  </section>
+                  </button>
                 ) : null}
 
                 <div
