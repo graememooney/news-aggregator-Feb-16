@@ -14,8 +14,30 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Regional Pulse News",
-  description: "Regional news, translated into English",
+  description: "Regional News, Translated for You",
+  metadataBase: new URL("https://regionalpulsenews.com"),
   manifest: "/manifest.webmanifest",
+  openGraph: {
+    title: "Regional Pulse News",
+    description: "Regional News, Translated for You",
+    url: "https://regionalpulsenews.com",
+    siteName: "Regional Pulse News",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Regional Pulse News - Regional News, Translated for You",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Regional Pulse News",
+    description: "Regional News, Translated for You",
+    images: ["/og-image.png"],
+  },
   icons: {
     icon: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
