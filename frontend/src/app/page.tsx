@@ -59,7 +59,7 @@ type HeadlineLimit = 30 | 50 | 100 | 200;
 const FALLBACK_REGION_OPTIONS: RegionOption[] = [
   {
     key: "mercosur",
-    name: "Mercosur",
+    name: "South America",
     status: "live",
     subdivision_label: "Country",
     default_subdivision: "uy",
@@ -84,13 +84,19 @@ const FALLBACK_REGION_OPTIONS: RegionOption[] = [
 ];
 
 const FALLBACK_MERCOSUR_SUBDIVISIONS: SubdivisionOption[] = [
-  { key: "all", code: "ALL", name: "All Mercosur", flag_url: "" },
+  { key: "all", code: "ALL", name: "All South America", flag_url: "" },
   { key: "mp", code: "MP", name: "MercoPress", flag_url: "" },
   { key: "uy", code: "UY", name: "Uruguay", flag_url: "https://flagcdn.com/w40/uy.png" },
   { key: "ar", code: "AR", name: "Argentina", flag_url: "https://flagcdn.com/w40/ar.png" },
   { key: "br", code: "BR", name: "Brazil", flag_url: "https://flagcdn.com/w40/br.png" },
   { key: "py", code: "PY", name: "Paraguay", flag_url: "https://flagcdn.com/w40/py.png" },
   { key: "bo", code: "BO", name: "Bolivia", flag_url: "https://flagcdn.com/w40/bo.png" },
+  { key: "cl", code: "CL", name: "Chile (coming soon)", flag_url: "https://flagcdn.com/w40/cl.png" },
+  { key: "co", code: "CO", name: "Colombia (coming soon)", flag_url: "https://flagcdn.com/w40/co.png" },
+  { key: "pe", code: "PE", name: "Peru (coming soon)", flag_url: "https://flagcdn.com/w40/pe.png" },
+  { key: "ec", code: "EC", name: "Ecuador (coming soon)", flag_url: "https://flagcdn.com/w40/ec.png" },
+  { key: "ve", code: "VE", name: "Venezuela (coming soon)", flag_url: "https://flagcdn.com/w40/ve.png" },
+  { key: "sr", code: "SR", name: "Suriname (coming soon)", flag_url: "https://flagcdn.com/w40/sr.png" },
 ];
 
 const HEADLINE_LIMIT_OPTIONS: HeadlineLimit[] = [30, 50, 100, 200];
@@ -2055,7 +2061,7 @@ export default function Home() {
                     className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                   >
                     {subdivisionOptions.map((c) => (
-                      <option key={c.key} value={c.key}>
+                      <option key={c.key} value={c.key} disabled={c.name.includes("(coming soon)")}>
                         {c.name}
                       </option>
                     ))}
