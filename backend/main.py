@@ -2865,9 +2865,9 @@ def _cluster_rank_score_and_factors(cobj: Dict[str, Any], subdivision_context: s
 # OpenAI client
 # ----------------------------
 def _get_openai_client():
-    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    api_key = (os.getenv("GRAEME_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
     if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set in backend environment (.env).")
+        raise HTTPException(status_code=500, detail="GRAEME_OPENAI_API_KEY not set in backend environment.")
 
     try:
         from openai import OpenAI  # type: ignore
