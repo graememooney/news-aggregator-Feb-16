@@ -4173,6 +4173,43 @@ def _worker_loop() -> None:
                         }
                         stats["enriched_count"] = total_enriched
 
+                        # --- Warm the /top response cache ---
+                        # Re-use the clusters we already computed, inject
+                        # freshly enriched translations, build the same
+                        # payload shape that /top returns, and write it
+                        # to top_cache so the next user request is instant.
+                        try:
+                            warm_limit = _hard_cap_limit(region_key, subdivision_key, 30)
+                            warm_clusters = clusters[: warm_limit]
+                            for wc in warm_clusters:
+                                wc_best = wc.get("best_item")
+                                if not isinstance(wc_best, dict):
+                                    continue
+                                wc_cid = (wc.get("cluster_id") or "").strip()
+                                if wc_cid:
+                                    wc_cached = _get_fresh_cluster_enrich(wc_cid)
+                                    if wc_cached:
+                                        wc_best["title_en"] = wc_cached.get("title_en") or ""
+                                        wc_best["summary_en"] = wc_cached.get("summary_en") or ""
+                                        wc_best["has_cached_summary"] = True
+                                wc["best_item"] = _strip_internal_fields(wc_best)
+
+                            warm_payload = {
+                                "region": region_key,
+                                "subdivision_label": _region_subdivision_label(region_key),
+                                "subdivision": subdivision_key,
+                                "country": subdivision_key,
+                                "range": r,
+                                "q": "",
+                                "limit": warm_limit,
+                                "count": len(warm_clusters),
+                                "clusters": warm_clusters,
+                            }
+                            warm_key = _top_cache_key(region_key, subdivision_key, r, "", warm_limit)
+                            _top_cache_set(warm_key, warm_payload)
+                        except Exception:
+                            pass  # cache warming is best-effort
+
                         if total_queued >= max_new_total:
                             break
                     if total_queued >= max_new_total:
