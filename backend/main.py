@@ -3335,15 +3335,16 @@ def get_subdivisions(region: str = DEFAULT_REGION_KEY):
 
     subdivisions = []
     for key, info in meta.items():
-        subdivisions.append(
-            {
-                "key": key,
-                "code": info["code"],
-                "name": info["name"],
-                "flag_url": info["flag_url"],
-                "source_count": counts.get(key, 0),
-            }
-        )
+        entry: Dict[str, Any] = {
+            "key": key,
+            "code": info["code"],
+            "name": info["name"],
+            "flag_url": info["flag_url"],
+            "source_count": counts.get(key, 0),
+        }
+        if info.get("status"):
+            entry["status"] = info["status"]
+        subdivisions.append(entry)
 
     return {
         "region": r,

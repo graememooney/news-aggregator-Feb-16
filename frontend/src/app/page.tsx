@@ -840,6 +840,7 @@ export default function Home() {
           name: String(c?.name || "").trim(),
           flag_url: String(c?.flag_url || ""),
           source_count: typeof c?.source_count === "number" ? c.source_count : undefined,
+          ...(c?.status ? { status: String(c.status) as "live" | "coming-soon" } : {}),
         }))
         .filter((c: SubdivisionOption) => c.key && c.name);
 
@@ -1556,6 +1557,8 @@ export default function Home() {
   }
 
   async function handleSubdivisionChange(nextSubdivision: string) {
+    const opt = subdivisionOptions.find((c) => c.key === nextSubdivision);
+    if (opt?.status === "coming-soon") return;
     setSubdivision(nextSubdivision);
     setClusters([]);
     setLoadError(null);
@@ -2089,14 +2092,18 @@ export default function Home() {
                     onChange={(e) => void handleSubdivisionChange(e.target.value)}
                     className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                   >
-                    {subdivisionOptions.map((c) => {
-                      const isComingSoon = c.status === "coming-soon";
-                      return (
-                        <option key={c.key} value={c.key} disabled={isComingSoon}>
-                          {c.name}{isComingSoon ? " (coming soon)" : ""}
-                        </option>
-                      );
-                    })}
+                    {subdivisionOptions.filter((c) => c.status !== "coming-soon").map((c) => (
+                      <option key={c.key} value={c.key}>{c.name}</option>
+                    ))}
+                    {subdivisionOptions.some((c) => c.status === "coming-soon") && (
+                      <optgroup label="Coming Soon">
+                        {subdivisionOptions.filter((c) => c.status === "coming-soon").map((c) => (
+                          <option key={c.key} value={c.key} disabled style={{ color: "#666" }}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 
