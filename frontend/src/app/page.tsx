@@ -40,6 +40,7 @@ type SubdivisionOption = {
   name: string;
   flag_url: string;
   source_count?: number;
+  status?: "live" | "coming-soon";
 };
 
 type RegionOption = {
@@ -57,6 +58,14 @@ type RegionOption = {
 type HeadlineLimit = 30 | 50 | 100 | 200;
 
 const FALLBACK_REGION_OPTIONS: RegionOption[] = [
+  {
+    key: "europe",
+    name: "Europe",
+    status: "live",
+    subdivision_label: "Country",
+    default_subdivision: "es",
+    default_country: "es",
+  },
   {
     key: "south-america",
     name: "South America",
@@ -102,6 +111,18 @@ const FALLBACK_SOUTH_AMERICA_SUBDIVISIONS: SubdivisionOption[] = [
   { key: "pe", code: "PE", name: "Peru", flag_url: "https://flagcdn.com/w40/pe.png" },
   { key: "ec", code: "EC", name: "Ecuador", flag_url: "https://flagcdn.com/w40/ec.png" },
   { key: "ve", code: "VE", name: "Venezuela", flag_url: "https://flagcdn.com/w40/ve.png" },
+];
+
+const FALLBACK_EUROPE_SUBDIVISIONS: SubdivisionOption[] = [
+  { key: "es", code: "ES", name: "Spain", flag_url: "https://flagcdn.com/w40/es.png" },
+  { key: "fr", code: "FR", name: "France", flag_url: "https://flagcdn.com/w40/fr.png" },
+  { key: "it", code: "IT", name: "Italy", flag_url: "https://flagcdn.com/w40/it.png", status: "coming-soon" },
+  { key: "gr", code: "GR", name: "Greece", flag_url: "https://flagcdn.com/w40/gr.png", status: "coming-soon" },
+  { key: "pt", code: "PT", name: "Portugal", flag_url: "https://flagcdn.com/w40/pt.png", status: "coming-soon" },
+  { key: "cy", code: "CY", name: "Cyprus", flag_url: "https://flagcdn.com/w40/cy.png", status: "coming-soon" },
+  { key: "hr", code: "HR", name: "Croatia", flag_url: "https://flagcdn.com/w40/hr.png", status: "coming-soon" },
+  { key: "tr", code: "TR", name: "Turkey", flag_url: "https://flagcdn.com/w40/tr.png", status: "coming-soon" },
+  { key: "mt", code: "MT", name: "Malta", flag_url: "https://flagcdn.com/w40/mt.png", status: "coming-soon" },
 ];
 
 const HEADLINE_LIMIT_OPTIONS: HeadlineLimit[] = [30, 50, 100, 200];
@@ -432,14 +453,27 @@ function getFallbackSubdivisionsForRegion(regionKey: string): SubdivisionOption[
   if (regionKey === "south-america" || regionKey === "mercosur") return FALLBACK_SOUTH_AMERICA_SUBDIVISIONS;
   if (regionKey === "mexico") {
     return [
-      { key: "all", code: "ALL", name: "All Mexico", flag_url: "" },
-      { key: "cdmx", code: "CDMX", name: "CDMX", flag_url: "" },
-      { key: "jalisco", code: "JAL", name: "Jalisco", flag_url: "" },
-      { key: "nuevo-leon", code: "NL", name: "Nuevo León", flag_url: "" },
-      { key: "edomex", code: "MEX", name: "Estado de México", flag_url: "" },
-      { key: "yucatan", code: "YUC", name: "Yucatán", flag_url: "" },
+      { key: "all", code: "ALL", name: "All Mexico", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "cdmx", code: "CDMX", name: "CDMX", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "jalisco", code: "JAL", name: "Jalisco", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "nuevo-leon", code: "NL", name: "Nuevo León", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "edomex", code: "MEX", name: "Estado de México", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "yucatan", code: "YUC", name: "Yucatán", flag_url: "https://flagcdn.com/w40/mx.png" },
     ];
   }
+  if (regionKey === "central-america") {
+    return [
+      { key: "all", code: "ALL", name: "All Central America", flag_url: "" },
+      { key: "gt", code: "GT", name: "Guatemala", flag_url: "https://flagcdn.com/w40/gt.png" },
+      { key: "cr", code: "CR", name: "Costa Rica", flag_url: "https://flagcdn.com/w40/cr.png" },
+      { key: "pa", code: "PA", name: "Panama", flag_url: "https://flagcdn.com/w40/pa.png" },
+      { key: "sv", code: "SV", name: "El Salvador", flag_url: "https://flagcdn.com/w40/sv.png" },
+      { key: "hn", code: "HN", name: "Honduras", flag_url: "https://flagcdn.com/w40/hn.png" },
+      { key: "ni", code: "NI", name: "Nicaragua", flag_url: "https://flagcdn.com/w40/ni.png" },
+      { key: "bz", code: "BZ", name: "Belize", flag_url: "https://flagcdn.com/w40/bz.png" },
+    ];
+  }
+  if (regionKey === "europe") return FALLBACK_EUROPE_SUBDIVISIONS;
   return [];
 }
 
@@ -488,6 +522,8 @@ export default function Home() {
   );
   const [category, setCategory] = useState<CategoryFilter>(DEFAULT_CATEGORY);
   const [headlineLimit, setHeadlineLimit] = useState<HeadlineLimit>(DEFAULT_HEADLINE_LIMIT);
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const countryPickerRef = React.useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -546,6 +582,16 @@ export default function Home() {
     else if (window.history.state?.modal === "feedback") { window.history.back(); }
     setFeedbackOpenRaw(open);
     if (open) { setFbSent(false); setFbError(""); }
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (countryPickerRef.current && !countryPickerRef.current.contains(e.target as Node)) {
+        setCountryPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -826,6 +872,7 @@ export default function Home() {
           name: String(c?.name || "").trim(),
           flag_url: String(c?.flag_url || ""),
           source_count: typeof c?.source_count === "number" ? c.source_count : undefined,
+          ...(c?.status ? { status: String(c.status) as "live" | "coming-soon" } : {}),
         }))
         .filter((c: SubdivisionOption) => c.key && c.name);
 
@@ -1529,6 +1576,7 @@ export default function Home() {
     }
 
     setRegion(nextRegion);
+    setCountryPickerOpen(false);
     setClusters([]);
     setLoadError(null);
 
@@ -1542,6 +1590,8 @@ export default function Home() {
   }
 
   async function handleSubdivisionChange(nextSubdivision: string) {
+    const opt = subdivisionOptions.find((c) => c.key === nextSubdivision);
+    if (opt?.status === "coming-soon") return;
     setSubdivision(nextSubdivision);
     setClusters([]);
     setLoadError(null);
@@ -2068,19 +2118,49 @@ export default function Home() {
                   </select>
                 </div>
 
-                <div>
+                <div ref={countryPickerRef} className="relative">
                   <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{subdivisionLabel}</label>
-                  <select
-                    value={subdivision}
-                    onChange={(e) => void handleSubdivisionChange(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  <button
+                    type="button"
+                    onClick={() => setCountryPickerOpen(!countryPickerOpen)}
+                    className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-3 text-left text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
                   >
-                    {subdivisionOptions.map((c) => (
-                      <option key={c.key} value={c.key} disabled={c.name.includes("(coming soon)")}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    <span className="flex items-center gap-2">
+                      {(() => { const sel = subdivisionOptions.find((c) => c.key === subdivision); return sel?.flag_url ? <img src={sel.flag_url} alt="" className="inline h-4 w-5 rounded-sm" /> : null; })()}
+                      {subdivisionOptions.find((c) => c.key === subdivision)?.name || subdivision}
+                    </span>
+                    <svg className={`h-4 w-4 text-gray-400 transition-transform ${countryPickerOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {countryPickerOpen && (
+                    <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                      {subdivisionOptions.filter((c) => c.status !== "coming-soon").map((c) => (
+                        <button
+                          key={c.key}
+                          type="button"
+                          onClick={() => { void handleSubdivisionChange(c.key); setCountryPickerOpen(false); }}
+                          className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 ${c.key === subdivision ? "bg-gray-100 font-medium dark:bg-gray-800" : "text-black dark:text-white"}`}
+                        >
+                          {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm" />}
+                          {c.name}
+                        </button>
+                      ))}
+                      {subdivisionOptions.some((c) => c.status === "coming-soon") && (
+                        <div className="border-t border-gray-200 px-3 py-2 dark:border-gray-700">
+                          <span className="text-xs font-medium uppercase tracking-wider text-gray-400">Coming Soon</span>
+                        </div>
+                      )}
+                      {subdivisionOptions.filter((c) => c.status === "coming-soon").map((c) => (
+                        <div
+                          key={c.key}
+                          className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-400 dark:text-gray-500"
+                        >
+                          {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm opacity-40" />}
+                          <span>{c.name}</span>
+                          <span className="ml-auto text-xs italic text-gray-400 dark:text-gray-500">coming soon</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>

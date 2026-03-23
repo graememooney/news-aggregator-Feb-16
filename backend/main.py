@@ -48,6 +48,26 @@ app.add_middleware(
 #   "country" remains accepted for Mercosur and existing frontend calls.
 # ----------------------------
 REGIONS: Dict[str, Dict[str, Any]] = {
+    "europe": {
+        "key": "europe",
+        "name": "Europe",
+        "status": "live",
+        "subdivision_label": "Country",
+        "default_subdivision": "es",
+        "default_country": "es",
+        "aliases": ["europe", "eu", "europa"],
+        "subdivisions": {
+            "es": {"code": "ES", "name": "Spain", "flag_url": "https://flagcdn.com/w40/es.png"},
+            "fr": {"code": "FR", "name": "France", "flag_url": "https://flagcdn.com/w40/fr.png"},
+            "it": {"code": "IT", "name": "Italy", "flag_url": "https://flagcdn.com/w40/it.png", "status": "coming-soon"},
+            "gr": {"code": "GR", "name": "Greece", "flag_url": "https://flagcdn.com/w40/gr.png", "status": "coming-soon"},
+            "pt": {"code": "PT", "name": "Portugal", "flag_url": "https://flagcdn.com/w40/pt.png", "status": "coming-soon"},
+            "cy": {"code": "CY", "name": "Cyprus", "flag_url": "https://flagcdn.com/w40/cy.png", "status": "coming-soon"},
+            "hr": {"code": "HR", "name": "Croatia", "flag_url": "https://flagcdn.com/w40/hr.png", "status": "coming-soon"},
+            "tr": {"code": "TR", "name": "Turkey", "flag_url": "https://flagcdn.com/w40/tr.png", "status": "coming-soon"},
+            "mt": {"code": "MT", "name": "Malta", "flag_url": "https://flagcdn.com/w40/mt.png", "status": "coming-soon"},
+        },
+    },
     "south-america": {
         "key": "south-america",
         "name": "South America",
@@ -78,7 +98,7 @@ REGIONS: Dict[str, Dict[str, Any]] = {
         "default_country": "all",  # transitional compatibility only
         "aliases": ["mexico", "mx"],
         "subdivisions": {
-            "all": {"code": "ALL", "name": "All Mexico", "flag_url": ""},
+            "all": {"code": "ALL", "name": "All Mexico", "flag_url": "https://flagcdn.com/w40/mx.png"},
             "cdmx": {"code": "CDMX", "name": "CDMX", "flag_url": ""},
             "jalisco": {"code": "JAL", "name": "Jalisco", "flag_url": ""},
             "nuevo-leon": {"code": "NL", "name": "Nuevo León", "flag_url": ""},
@@ -921,6 +941,177 @@ SOURCES: List[Dict[str, Any]] = [
         "country_flag_url": "https://flagcdn.com/w40/bz.png",
         "source_logo": "https://lovefm.com/favicon.ico",
         "feed_url": "https://lovefm.com/feed/",
+    },
+    # --- Spain (ES) ---
+    {
+        "id": "elpais_es",
+        "name": "El País (ES)",
+        "region_key": "europe",
+        "subdivision_key": "es",
+        "country_key": "es",
+        "subdivision_code": "ES",
+        "country_code": "ES",
+        "subdivision_flag_url": "https://flagcdn.com/w40/es.png",
+        "country_flag_url": "https://flagcdn.com/w40/es.png",
+        "source_logo": "https://elpais.com/favicon.ico",
+        "feed_url": "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada",
+    },
+    {
+        "id": "elmundo_es",
+        "name": "El Mundo (ES)",
+        "region_key": "europe",
+        "subdivision_key": "es",
+        "country_key": "es",
+        "subdivision_code": "ES",
+        "country_code": "ES",
+        "subdivision_flag_url": "https://flagcdn.com/w40/es.png",
+        "country_flag_url": "https://flagcdn.com/w40/es.png",
+        "source_logo": "https://www.elmundo.es/favicon.ico",
+        "feed_url": "https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml",
+    },
+    {
+        "id": "abc_es",
+        "name": "ABC (ES)",
+        "region_key": "europe",
+        "subdivision_key": "es",
+        "country_key": "es",
+        "subdivision_code": "ES",
+        "country_code": "ES",
+        "subdivision_flag_url": "https://flagcdn.com/w40/es.png",
+        "country_flag_url": "https://flagcdn.com/w40/es.png",
+        "source_logo": "https://www.abc.es/favicon.ico",
+        "feed_url": "https://www.abc.es/rss/2.0/portada/",
+    },
+    {
+        "id": "lavanguardia_es",
+        "name": "La Vanguardia (ES)",
+        "region_key": "europe",
+        "subdivision_key": "es",
+        "country_key": "es",
+        "subdivision_code": "ES",
+        "country_code": "ES",
+        "subdivision_flag_url": "https://flagcdn.com/w40/es.png",
+        "country_flag_url": "https://flagcdn.com/w40/es.png",
+        "source_logo": "https://www.lavanguardia.com/favicon.ico",
+        "feed_url": "https://www.lavanguardia.com/rss/home.xml",
+    },
+    {
+        "id": "elconfidencial_es",
+        "name": "El Confidencial (ES)",
+        "region_key": "europe",
+        "subdivision_key": "es",
+        "country_key": "es",
+        "subdivision_code": "ES",
+        "country_code": "ES",
+        "subdivision_flag_url": "https://flagcdn.com/w40/es.png",
+        "country_flag_url": "https://flagcdn.com/w40/es.png",
+        "source_logo": "https://www.elconfidencial.com/favicon.ico",
+        "feed_url": "https://rss.elconfidencial.com/espana/",
+    },
+    {
+        "id": "europapress_es",
+        "name": "Europa Press (ES)",
+        "region_key": "europe",
+        "subdivision_key": "es",
+        "country_key": "es",
+        "subdivision_code": "ES",
+        "country_code": "ES",
+        "subdivision_flag_url": "https://flagcdn.com/w40/es.png",
+        "country_flag_url": "https://flagcdn.com/w40/es.png",
+        "source_logo": "https://www.europapress.es/favicon.ico",
+        "feed_url": "https://www.europapress.es/rss/rss.aspx",
+    },
+    {
+        "id": "elperiodico_es",
+        "name": "El Periódico (ES)",
+        "region_key": "europe",
+        "subdivision_key": "es",
+        "country_key": "es",
+        "subdivision_code": "ES",
+        "country_code": "ES",
+        "subdivision_flag_url": "https://flagcdn.com/w40/es.png",
+        "country_flag_url": "https://flagcdn.com/w40/es.png",
+        "source_logo": "https://www.elperiodico.com/favicon.ico",
+        "feed_url": "https://www.elperiodico.com/es/rss/rss_portada.xml",
+    },
+    # --- France (FR) ---
+    {
+        "id": "lemonde_fr",
+        "name": "Le Monde (FR)",
+        "region_key": "europe",
+        "subdivision_key": "fr",
+        "country_key": "fr",
+        "subdivision_code": "FR",
+        "country_code": "FR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/fr.png",
+        "country_flag_url": "https://flagcdn.com/w40/fr.png",
+        "source_logo": "https://www.lemonde.fr/favicon.ico",
+        "feed_url": "https://www.lemonde.fr/rss/une.xml",
+    },
+    {
+        "id": "20minutes_fr",
+        "name": "20 Minutes (FR)",
+        "region_key": "europe",
+        "subdivision_key": "fr",
+        "country_key": "fr",
+        "subdivision_code": "FR",
+        "country_code": "FR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/fr.png",
+        "country_flag_url": "https://flagcdn.com/w40/fr.png",
+        "source_logo": "https://www.20minutes.fr/favicon.ico",
+        "feed_url": "https://www.20minutes.fr/feeds/rss-une.xml",
+    },
+    {
+        "id": "liberation_fr",
+        "name": "Libération (FR)",
+        "region_key": "europe",
+        "subdivision_key": "fr",
+        "country_key": "fr",
+        "subdivision_code": "FR",
+        "country_code": "FR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/fr.png",
+        "country_flag_url": "https://flagcdn.com/w40/fr.png",
+        "source_logo": "https://www.liberation.fr/favicon.ico",
+        "feed_url": "https://www.liberation.fr/arc/outboundfeeds/rss/?outputType=xml",
+    },
+    {
+        "id": "franceinfo_fr",
+        "name": "Franceinfo (FR)",
+        "region_key": "europe",
+        "subdivision_key": "fr",
+        "country_key": "fr",
+        "subdivision_code": "FR",
+        "country_code": "FR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/fr.png",
+        "country_flag_url": "https://flagcdn.com/w40/fr.png",
+        "source_logo": "https://www.francetvinfo.fr/favicon.ico",
+        "feed_url": "https://www.francetvinfo.fr/titres.rss",
+    },
+    {
+        "id": "ouestfrance_fr",
+        "name": "Ouest-France (FR)",
+        "region_key": "europe",
+        "subdivision_key": "fr",
+        "country_key": "fr",
+        "subdivision_code": "FR",
+        "country_code": "FR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/fr.png",
+        "country_flag_url": "https://flagcdn.com/w40/fr.png",
+        "source_logo": "https://www.ouest-france.fr/favicon.ico",
+        "feed_url": "https://www.ouest-france.fr/rss/une",
+    },
+    {
+        "id": "ladepeche_fr",
+        "name": "La Dépêche (FR)",
+        "region_key": "europe",
+        "subdivision_key": "fr",
+        "country_key": "fr",
+        "subdivision_code": "FR",
+        "country_code": "FR",
+        "subdivision_flag_url": "https://flagcdn.com/w40/fr.png",
+        "country_flag_url": "https://flagcdn.com/w40/fr.png",
+        "source_logo": "https://www.ladepeche.fr/favicon.ico",
+        "feed_url": "https://www.ladepeche.fr/rss.xml",
     },
 ]
 
@@ -3144,15 +3335,16 @@ def get_subdivisions(region: str = DEFAULT_REGION_KEY):
 
     subdivisions = []
     for key, info in meta.items():
-        subdivisions.append(
-            {
-                "key": key,
-                "code": info["code"],
-                "name": info["name"],
-                "flag_url": info["flag_url"],
-                "source_count": counts.get(key, 0),
-            }
-        )
+        entry: Dict[str, Any] = {
+            "key": key,
+            "code": info["code"],
+            "name": info["name"],
+            "flag_url": info["flag_url"],
+            "source_count": counts.get(key, 0),
+        }
+        if info.get("status"):
+            entry["status"] = info["status"]
+        subdivisions.append(entry)
 
     return {
         "region": r,
@@ -3830,7 +4022,7 @@ def _worker_loop() -> None:
 
     subdivisions = _env_list("PRE_ENRICH_SUBDIVISIONS", "")
     if not subdivisions:
-        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,cl,co,pe,ec,ve,cdmx,jalisco,nuevo-leon,edomex,yucatan,gt,cr,sv,hn,ni,pa,bz")
+        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,cl,co,pe,ec,ve,cdmx,jalisco,nuevo-leon,edomex,yucatan,gt,cr,sv,hn,ni,pa,bz,es,fr")
     if not subdivisions:
         subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all", "cdmx"]
 
