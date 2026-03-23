@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
+  if (process.env.NEXT_PUBLIC_PAYMENTS_ENABLED !== "true") {
+    return NextResponse.json({ error: "Payments are not currently available" }, { status: 503 });
+  }
+
   const sk = process.env.STRIPE_SECRET_KEY;
   if (!sk) {
     return NextResponse.json({ error: "Stripe not configured" }, { status: 500 });

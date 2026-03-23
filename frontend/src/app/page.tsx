@@ -151,6 +151,7 @@ const DEFAULT_QUERY = "";
 const APP_NAME = "Regional Pulse News";
 const APP_TAGLINE = "Regional News, Translated for You";
 const BRAND_LOGO_PATH = "/regional-pulse-logo.png";
+const PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_PAYMENTS_ENABLED === "true";
 
 type ShareNavigator = Navigator & {
   share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
@@ -1556,6 +1557,7 @@ export default function Home() {
   const AD_BANNER_FIRST = 2;
   const AD_BANNER_INTERVAL = 8;
   function shouldShowBanner(idx: number): boolean {
+    if (!PAYMENTS_ENABLED) return false;
     if (subscribed) return false;
     if (filteredClusters.length < 4) return false;
     if (idx === AD_BANNER_FIRST) return true;
@@ -1629,7 +1631,7 @@ export default function Home() {
                   {mounted ? theme === "dark" ? <SunIcon /> : <MoonIcon /> : <MoonIcon />}
                 </button>
 
-                {subscribed ? (
+                {PAYMENTS_ENABLED && (subscribed ? (
                   <button
                     onClick={handleManageSubscription}
                     aria-label="Manage subscription"
@@ -1645,13 +1647,13 @@ export default function Home() {
                   >
                     <span className="text-sm font-bold leading-none">$</span>
                   </button>
-                )}
+                ))}
               </div>
             </div>
           </div>
         </section>
 
-        {subscribed ? (
+        {PAYMENTS_ENABLED && subscribed ? (
           <div className="mt-3 flex items-center justify-between rounded-2xl border border-green-200 bg-green-50/80 px-3 py-1.5 dark:border-green-800 dark:bg-green-500/10">
             <div className="flex items-center gap-1.5">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 text-green-600 dark:text-green-400"><path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm3.844-8.791a.75.75 0 00-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 10-1.114 1.004l2.25 2.5a.75.75 0 001.152-.043l4.25-5.5z" clipRule="evenodd" /></svg>
@@ -2310,7 +2312,7 @@ export default function Home() {
           </div>
         ) : null}
 
-        {subscribeOpen ? (
+        {PAYMENTS_ENABLED && subscribeOpen ? (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <button className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" aria-label="Close" onClick={() => setSubscribeOpen(false)} />
             <div className="relative w-[calc(100vw-2rem)] max-w-md rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:p-6">
@@ -2485,6 +2487,7 @@ export default function Home() {
           </div>
         ) : null}
         {/* Subscription footer */}
+        {PAYMENTS_ENABLED ? (
         <div className="mt-8 mb-4 flex justify-center">
           {subscribed ? (
             <div className="flex items-center gap-3">
@@ -2508,6 +2511,7 @@ export default function Home() {
             </button>
           ) : null}
         </div>
+        ) : null}
       </main>
 
       {showStartupSplash ? (
