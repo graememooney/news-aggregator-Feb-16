@@ -502,6 +502,8 @@ export default function Home() {
   );
   const [category, setCategory] = useState<CategoryFilter>(DEFAULT_CATEGORY);
   const [headlineLimit, setHeadlineLimit] = useState<HeadlineLimit>(DEFAULT_HEADLINE_LIMIT);
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const countryPickerRef = React.useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -560,6 +562,16 @@ export default function Home() {
     else if (window.history.state?.modal === "feedback") { window.history.back(); }
     setFeedbackOpenRaw(open);
     if (open) { setFbSent(false); setFbError(""); }
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (countryPickerRef.current && !countryPickerRef.current.contains(e.target as Node)) {
+        setCountryPickerOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -2085,26 +2097,62 @@ export default function Home() {
                   </select>
                 </div>
 
-                <div>
+                <div ref={countryPickerRef} className="relative">
                   <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{subdivisionLabel}</label>
-                  <select
-                    value={subdivision}
-                    onChange={(e) => void handleSubdivisionChange(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                  >
-                    {subdivisionOptions.filter((c) => c.status !== "coming-soon").map((c) => (
-                      <option key={c.key} value={c.key}>{c.name}</option>
-                    ))}
-                  </select>
-                  {subdivisionOptions.some((c) => c.status === "coming-soon") && (
-                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                      {subdivisionOptions.filter((c) => c.status === "coming-soon").map((c) => (
-                        <span key={c.key} className="text-xs text-gray-400 dark:text-gray-500">
-                          {c.flag_url && <img src={c.flag_url} alt="" className="mr-1 inline h-3 w-4 rounded-sm opacity-40" />}
-                          {c.name} <span className="italic">coming soon</span>
+                  {subdivisionOptions.some((c) => c.status === "coming-soon") ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setCountryPickerOpen(!countryPickerOpen)}
+                        className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-3 text-left text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                      >
+                        <span className="flex items-center gap-2">
+                          {(() => { const sel = subdivisionOptions.find((c) => c.key === subdivision); return sel?.flag_url ? <img src={sel.flag_url} alt="" className="inline h-4 w-5 rounded-sm" /> : null; })()}
+                          {subdivisionOptions.find((c) => c.key === subdivision)?.name || subdivision}
                         </span>
+                        <svg className={`h-4 w-4 text-gray-400 transition-transform ${countryPickerOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {countryPickerOpen && (
+                        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                          {subdivisionOptions.filter((c) => c.status !== "coming-soon").map((c) => (
+                            <button
+                              key={c.key}
+                              type="button"
+                              onClick={() => { void handleSubdivisionChange(c.key); setCountryPickerOpen(false); }}
+                              className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 ${c.key === subdivision ? "bg-gray-100 font-medium dark:bg-gray-800" : "text-black dark:text-white"}`}
+                            >
+                              {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm" />}
+                              {c.name}
+                            </button>
+                          ))}
+                          {subdivisionOptions.some((c) => c.status === "coming-soon") && (
+                            <div className="border-t border-gray-200 px-3 py-2 dark:border-gray-700">
+                              <span className="text-xs font-medium uppercase tracking-wider text-gray-400">Coming Soon</span>
+                            </div>
+                          )}
+                          {subdivisionOptions.filter((c) => c.status === "coming-soon").map((c) => (
+                            <div
+                              key={c.key}
+                              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-400 dark:text-gray-500"
+                            >
+                              {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm opacity-40" />}
+                              <span>{c.name}</span>
+                              <span className="ml-auto text-xs italic text-gray-400 dark:text-gray-500">coming soon</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <select
+                      value={subdivision}
+                      onChange={(e) => void handleSubdivisionChange(e.target.value)}
+                      className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                    >
+                      {subdivisionOptions.map((c) => (
+                        <option key={c.key} value={c.key}>{c.name}</option>
                       ))}
-                    </div>
+                    </select>
                   )}
                 </div>
 
