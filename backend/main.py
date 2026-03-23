@@ -48,6 +48,26 @@ app.add_middleware(
 #   "country" remains accepted for Mercosur and existing frontend calls.
 # ----------------------------
 REGIONS: Dict[str, Dict[str, Any]] = {
+    "europe": {
+        "key": "europe",
+        "name": "Europe",
+        "status": "live",
+        "subdivision_label": "Country",
+        "default_subdivision": "es",
+        "default_country": "es",
+        "aliases": ["europe", "eu", "europa"],
+        "subdivisions": {
+            "es": {"code": "ES", "name": "Spain", "flag_url": "https://flagcdn.com/w40/es.png"},
+            "fr": {"code": "FR", "name": "France", "flag_url": "https://flagcdn.com/w40/fr.png"},
+            "it": {"code": "IT", "name": "Italy", "flag_url": "https://flagcdn.com/w40/it.png", "status": "coming-soon"},
+            "gr": {"code": "GR", "name": "Greece", "flag_url": "https://flagcdn.com/w40/gr.png", "status": "coming-soon"},
+            "pt": {"code": "PT", "name": "Portugal", "flag_url": "https://flagcdn.com/w40/pt.png", "status": "coming-soon"},
+            "cy": {"code": "CY", "name": "Cyprus", "flag_url": "https://flagcdn.com/w40/cy.png", "status": "coming-soon"},
+            "hr": {"code": "HR", "name": "Croatia", "flag_url": "https://flagcdn.com/w40/hr.png", "status": "coming-soon"},
+            "tr": {"code": "TR", "name": "Turkey", "flag_url": "https://flagcdn.com/w40/tr.png", "status": "coming-soon"},
+            "mt": {"code": "MT", "name": "Malta", "flag_url": "https://flagcdn.com/w40/mt.png", "status": "coming-soon"},
+        },
+    },
     "south-america": {
         "key": "south-america",
         "name": "South America",
@@ -103,26 +123,6 @@ REGIONS: Dict[str, Dict[str, Any]] = {
             "hn": {"code": "HN", "name": "Honduras", "flag_url": "https://flagcdn.com/w40/hn.png"},
             "ni": {"code": "NI", "name": "Nicaragua", "flag_url": "https://flagcdn.com/w40/ni.png"},
             "bz": {"code": "BZ", "name": "Belize", "flag_url": "https://flagcdn.com/w40/bz.png"},
-        },
-    },
-    "europe": {
-        "key": "europe",
-        "name": "Europe",
-        "status": "live",
-        "subdivision_label": "Country",
-        "default_subdivision": "es",
-        "default_country": "es",
-        "aliases": ["europe", "eu", "europa"],
-        "subdivisions": {
-            "es": {"code": "ES", "name": "Spain", "flag_url": "https://flagcdn.com/w40/es.png"},
-            "fr": {"code": "FR", "name": "France", "flag_url": "https://flagcdn.com/w40/fr.png"},
-            "it": {"code": "IT", "name": "Italy", "flag_url": "https://flagcdn.com/w40/it.png", "status": "coming-soon"},
-            "gr": {"code": "GR", "name": "Greece", "flag_url": "https://flagcdn.com/w40/gr.png", "status": "coming-soon"},
-            "pt": {"code": "PT", "name": "Portugal", "flag_url": "https://flagcdn.com/w40/pt.png", "status": "coming-soon"},
-            "cy": {"code": "CY", "name": "Cyprus", "flag_url": "https://flagcdn.com/w40/cy.png", "status": "coming-soon"},
-            "hr": {"code": "HR", "name": "Croatia", "flag_url": "https://flagcdn.com/w40/hr.png", "status": "coming-soon"},
-            "tr": {"code": "TR", "name": "Turkey", "flag_url": "https://flagcdn.com/w40/tr.png", "status": "coming-soon"},
-            "mt": {"code": "MT", "name": "Malta", "flag_url": "https://flagcdn.com/w40/mt.png", "status": "coming-soon"},
         },
     },
 }

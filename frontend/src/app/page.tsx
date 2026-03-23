@@ -59,6 +59,14 @@ type HeadlineLimit = 30 | 50 | 100 | 200;
 
 const FALLBACK_REGION_OPTIONS: RegionOption[] = [
   {
+    key: "europe",
+    name: "Europe",
+    status: "live",
+    subdivision_label: "Country",
+    default_subdivision: "es",
+    default_country: "es",
+  },
+  {
     key: "south-america",
     name: "South America",
     status: "live",
@@ -81,14 +89,6 @@ const FALLBACK_REGION_OPTIONS: RegionOption[] = [
     subdivision_label: "Country",
     default_subdivision: "all",
     default_country: "all",
-  },
-  {
-    key: "europe",
-    name: "Europe",
-    status: "live",
-    subdivision_label: "Country",
-    default_subdivision: "es",
-    default_country: "es",
   },
 ];
 
