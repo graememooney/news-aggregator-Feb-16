@@ -445,12 +445,24 @@ function getFallbackSubdivisionsForRegion(regionKey: string): SubdivisionOption[
   if (regionKey === "south-america" || regionKey === "mercosur") return FALLBACK_SOUTH_AMERICA_SUBDIVISIONS;
   if (regionKey === "mexico") {
     return [
-      { key: "all", code: "ALL", name: "All Mexico", flag_url: "" },
-      { key: "cdmx", code: "CDMX", name: "CDMX", flag_url: "" },
-      { key: "jalisco", code: "JAL", name: "Jalisco", flag_url: "" },
-      { key: "nuevo-leon", code: "NL", name: "Nuevo León", flag_url: "" },
-      { key: "edomex", code: "MEX", name: "Estado de México", flag_url: "" },
-      { key: "yucatan", code: "YUC", name: "Yucatán", flag_url: "" },
+      { key: "all", code: "ALL", name: "All Mexico", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "cdmx", code: "CDMX", name: "CDMX", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "jalisco", code: "JAL", name: "Jalisco", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "nuevo-leon", code: "NL", name: "Nuevo León", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "edomex", code: "MEX", name: "Estado de México", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "yucatan", code: "YUC", name: "Yucatán", flag_url: "https://flagcdn.com/w40/mx.png" },
+    ];
+  }
+  if (regionKey === "central-america") {
+    return [
+      { key: "all", code: "ALL", name: "All Central America", flag_url: "" },
+      { key: "gt", code: "GT", name: "Guatemala", flag_url: "https://flagcdn.com/w40/gt.png" },
+      { key: "cr", code: "CR", name: "Costa Rica", flag_url: "https://flagcdn.com/w40/cr.png" },
+      { key: "pa", code: "PA", name: "Panama", flag_url: "https://flagcdn.com/w40/pa.png" },
+      { key: "sv", code: "SV", name: "El Salvador", flag_url: "https://flagcdn.com/w40/sv.png" },
+      { key: "hn", code: "HN", name: "Honduras", flag_url: "https://flagcdn.com/w40/hn.png" },
+      { key: "ni", code: "NI", name: "Nicaragua", flag_url: "https://flagcdn.com/w40/ni.png" },
+      { key: "bz", code: "BZ", name: "Belize", flag_url: "https://flagcdn.com/w40/bz.png" },
     ];
   }
   if (regionKey === "europe") return FALLBACK_EUROPE_SUBDIVISIONS;
@@ -1556,6 +1568,7 @@ export default function Home() {
     }
 
     setRegion(nextRegion);
+    setCountryPickerOpen(false);
     setClusters([]);
     setLoadError(null);
 
@@ -2099,60 +2112,46 @@ export default function Home() {
 
                 <div ref={countryPickerRef} className="relative">
                   <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{subdivisionLabel}</label>
-                  {subdivisionOptions.some((c) => c.status === "coming-soon") ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setCountryPickerOpen(!countryPickerOpen)}
-                        className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-3 text-left text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                      >
-                        <span className="flex items-center gap-2">
-                          {(() => { const sel = subdivisionOptions.find((c) => c.key === subdivision); return sel?.flag_url ? <img src={sel.flag_url} alt="" className="inline h-4 w-5 rounded-sm" /> : null; })()}
-                          {subdivisionOptions.find((c) => c.key === subdivision)?.name || subdivision}
-                        </span>
-                        <svg className={`h-4 w-4 text-gray-400 transition-transform ${countryPickerOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                      {countryPickerOpen && (
-                        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
-                          {subdivisionOptions.filter((c) => c.status !== "coming-soon").map((c) => (
-                            <button
-                              key={c.key}
-                              type="button"
-                              onClick={() => { void handleSubdivisionChange(c.key); setCountryPickerOpen(false); }}
-                              className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 ${c.key === subdivision ? "bg-gray-100 font-medium dark:bg-gray-800" : "text-black dark:text-white"}`}
-                            >
-                              {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm" />}
-                              {c.name}
-                            </button>
-                          ))}
-                          {subdivisionOptions.some((c) => c.status === "coming-soon") && (
-                            <div className="border-t border-gray-200 px-3 py-2 dark:border-gray-700">
-                              <span className="text-xs font-medium uppercase tracking-wider text-gray-400">Coming Soon</span>
-                            </div>
-                          )}
-                          {subdivisionOptions.filter((c) => c.status === "coming-soon").map((c) => (
-                            <div
-                              key={c.key}
-                              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-400 dark:text-gray-500"
-                            >
-                              {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm opacity-40" />}
-                              <span>{c.name}</span>
-                              <span className="ml-auto text-xs italic text-gray-400 dark:text-gray-500">coming soon</span>
-                            </div>
-                          ))}
+                  <button
+                    type="button"
+                    onClick={() => setCountryPickerOpen(!countryPickerOpen)}
+                    className="flex h-11 w-full items-center justify-between rounded-xl border border-gray-300 bg-white px-3 text-left text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                  >
+                    <span className="flex items-center gap-2">
+                      {(() => { const sel = subdivisionOptions.find((c) => c.key === subdivision); return sel?.flag_url ? <img src={sel.flag_url} alt="" className="inline h-4 w-5 rounded-sm" /> : null; })()}
+                      {subdivisionOptions.find((c) => c.key === subdivision)?.name || subdivision}
+                    </span>
+                    <svg className={`h-4 w-4 text-gray-400 transition-transform ${countryPickerOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {countryPickerOpen && (
+                    <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-gray-300 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                      {subdivisionOptions.filter((c) => c.status !== "coming-soon").map((c) => (
+                        <button
+                          key={c.key}
+                          type="button"
+                          onClick={() => { void handleSubdivisionChange(c.key); setCountryPickerOpen(false); }}
+                          className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800 ${c.key === subdivision ? "bg-gray-100 font-medium dark:bg-gray-800" : "text-black dark:text-white"}`}
+                        >
+                          {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm" />}
+                          {c.name}
+                        </button>
+                      ))}
+                      {subdivisionOptions.some((c) => c.status === "coming-soon") && (
+                        <div className="border-t border-gray-200 px-3 py-2 dark:border-gray-700">
+                          <span className="text-xs font-medium uppercase tracking-wider text-gray-400">Coming Soon</span>
                         </div>
                       )}
-                    </>
-                  ) : (
-                    <select
-                      value={subdivision}
-                      onChange={(e) => void handleSubdivisionChange(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                    >
-                      {subdivisionOptions.map((c) => (
-                        <option key={c.key} value={c.key}>{c.name}</option>
+                      {subdivisionOptions.filter((c) => c.status === "coming-soon").map((c) => (
+                        <div
+                          key={c.key}
+                          className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-gray-400 dark:text-gray-500"
+                        >
+                          {c.flag_url && <img src={c.flag_url} alt="" className="inline h-4 w-5 rounded-sm opacity-40" />}
+                          <span>{c.name}</span>
+                          <span className="ml-auto text-xs italic text-gray-400 dark:text-gray-500">coming soon</span>
+                        </div>
                       ))}
-                    </select>
+                    </div>
                   )}
                 </div>
 

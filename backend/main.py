@@ -98,7 +98,7 @@ REGIONS: Dict[str, Dict[str, Any]] = {
         "default_country": "all",  # transitional compatibility only
         "aliases": ["mexico", "mx"],
         "subdivisions": {
-            "all": {"code": "ALL", "name": "All Mexico", "flag_url": ""},
+            "all": {"code": "ALL", "name": "All Mexico", "flag_url": "https://flagcdn.com/w40/mx.png"},
             "cdmx": {"code": "CDMX", "name": "CDMX", "flag_url": ""},
             "jalisco": {"code": "JAL", "name": "Jalisco", "flag_url": ""},
             "nuevo-leon": {"code": "NL", "name": "Nuevo León", "flag_url": ""},
