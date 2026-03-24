@@ -776,12 +776,6 @@ export default function Home() {
   }, [subdivision, subdivisionOptions, selectedRegionDefaultSubdivision]);
 
   function openTranslated(link: string) {
-    // On iOS, open the article directly so Safari's built-in translate can handle it
-    // (Google Translate redirect doesn't work well on iOS Safari)
-    if (ios) {
-      window.open(link, "_blank");
-      return;
-    }
     const target = isLaDiaria(link) ? `${window.location.origin}/api/reader?url=${encodeURIComponent(link)}` : link;
     const encoded = encodeURIComponent(target);
     window.open(`https://translate.google.com/translate?sl=auto&tl=en&u=${encoded}`, "_blank");
@@ -2060,7 +2054,7 @@ export default function Home() {
                           : "cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500 dark:border-gray-800 dark:bg-gray-800 dark:text-gray-500"
                       }`}
                     >
-                      {ios ? "Read Original Article →" : "Open Translated Article →"}
+                      {"Open Translated Article →"}
                     </button>
                   </div>
                 </div>
@@ -2512,7 +2506,7 @@ export default function Home() {
                   </p>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-gray-600 dark:text-gray-400">
                     <li>
-                      <span className="text-gray-800 dark:text-white/80">iPhone / iPad (Safari):</span> articles open in their original language. Tap the <span className="font-medium">aA</span> button in the address bar and choose "Translate to English" for a native, clean translation.
+                      <span className="text-gray-800 dark:text-white/80">iPhone / iPad (Safari):</span> articles open through Google Translate so you see the full story in English automatically.
                     </li>
                     <li>
                       <span className="text-gray-800 dark:text-white/80">Android / Chrome:</span> articles open through Google Translate so you see the full story in English automatically.
