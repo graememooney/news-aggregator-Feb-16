@@ -17,12 +17,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Regional Pulse News",
-  description: "Regional News, Translated for You",
+  description: "Regional News, Translated for You. English-language news coverage from Latin America and Europe.",
   metadataBase: new URL("https://regionalpulsenews.com"),
   manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Regional Pulse News",
-    description: "Regional News, Translated for You",
+    description: "Regional News, Translated for You. English-language news coverage from Latin America and Europe.",
     url: "https://regionalpulsenews.com",
     siteName: "Regional Pulse News",
     images: [
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Regional Pulse News",
-    description: "Regional News, Translated for You",
+    description: "Regional News, Translated for You. English-language news coverage from Latin America and Europe.",
     images: ["/og-image.png"],
   },
   icons: {
@@ -48,6 +48,9 @@ export const metadata: Metadata = {
       { url: "/icon-1024.png", sizes: "1024x1024", type: "image/png" },
     ],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  alternates: {
+    canonical: "https://regionalpulsenews.com",
   },
 };
 
@@ -106,6 +109,55 @@ export default function RootLayout({
         )}
         <ThemeInitScript />
         <ServiceWorkerRegisterScript />
+
+        {/* Structured data: NewsMediaOrganization for Google News */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "NewsMediaOrganization",
+              name: "Regional Pulse News",
+              url: "https://regionalpulsenews.com",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://regionalpulsenews.com/icon-512.png",
+                width: 512,
+                height: 512,
+              },
+              sameAs: [],
+              description:
+                "English-language news aggregator covering Latin America and Europe. Translated headlines and summaries from regional sources.",
+              foundingDate: "2025",
+              actionableFeedbackPolicy: "https://regionalpulsenews.com/about",
+              correctionsPolicy: "https://regionalpulsenews.com/about",
+              ethicsPolicy: "https://regionalpulsenews.com/about",
+              masthead: "https://regionalpulsenews.com/about",
+              publishingPrinciples: "https://regionalpulsenews.com/about",
+            }),
+          }}
+        />
+
+        {/* Structured data: WebSite with SearchAction for sitelinks search */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Regional Pulse News",
+              url: "https://regionalpulsenews.com",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: {
+                  "@type": "EntryPoint",
+                  urlTemplate: "https://regionalpulsenews.com/?q={search_term_string}",
+                },
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
 
         <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
         <meta name="theme-color" content="#faf9f7" media="(prefers-color-scheme: light)" />

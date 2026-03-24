@@ -2557,6 +2557,11 @@ export default function Home() {
                   <p className="mt-2 text-gray-600 dark:text-gray-400">
                     Regional news matters, but most of it never gets translated. This app fixes that: one feed, multiple countries, everything in English. No accounts, no paywalls, no clutter.
                   </p>
+                  <p className="mt-2">
+                    <a href="/about" className="text-sm text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                      Read more about Regional Pulse News →
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>
