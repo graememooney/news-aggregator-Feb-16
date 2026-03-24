@@ -93,28 +93,28 @@ const FALLBACK_REGION_OPTIONS: RegionOption[] = [
 ];
 
 const FALLBACK_SOUTH_AMERICA_SUBDIVISIONS: SubdivisionOption[] = [
-  { key: "uy", code: "UY", name: "Uruguay", flag_url: "https://flagcdn.com/w40/uy.png" },
   { key: "ar", code: "AR", name: "Argentina", flag_url: "https://flagcdn.com/w40/ar.png" },
-  { key: "br", code: "BR", name: "Brazil", flag_url: "https://flagcdn.com/w40/br.png" },
-  { key: "py", code: "PY", name: "Paraguay", flag_url: "https://flagcdn.com/w40/py.png" },
   { key: "bo", code: "BO", name: "Bolivia", flag_url: "https://flagcdn.com/w40/bo.png" },
+  { key: "br", code: "BR", name: "Brazil", flag_url: "https://flagcdn.com/w40/br.png" },
   { key: "cl", code: "CL", name: "Chile", flag_url: "https://flagcdn.com/w40/cl.png" },
   { key: "co", code: "CO", name: "Colombia", flag_url: "https://flagcdn.com/w40/co.png" },
-  { key: "pe", code: "PE", name: "Peru", flag_url: "https://flagcdn.com/w40/pe.png" },
   { key: "ec", code: "EC", name: "Ecuador", flag_url: "https://flagcdn.com/w40/ec.png" },
+  { key: "py", code: "PY", name: "Paraguay", flag_url: "https://flagcdn.com/w40/py.png" },
+  { key: "pe", code: "PE", name: "Peru", flag_url: "https://flagcdn.com/w40/pe.png" },
+  { key: "uy", code: "UY", name: "Uruguay", flag_url: "https://flagcdn.com/w40/uy.png" },
   { key: "ve", code: "VE", name: "Venezuela", flag_url: "https://flagcdn.com/w40/ve.png" },
 ];
 
 const FALLBACK_EUROPE_SUBDIVISIONS: SubdivisionOption[] = [
-  { key: "es", code: "ES", name: "Spain", flag_url: "https://flagcdn.com/w40/es.png" },
+  { key: "hr", code: "HR", name: "Croatia", flag_url: "https://flagcdn.com/w40/hr.png" },
+  { key: "cy", code: "CY", name: "Cyprus", flag_url: "https://flagcdn.com/w40/cy.png" },
   { key: "fr", code: "FR", name: "France", flag_url: "https://flagcdn.com/w40/fr.png" },
-  { key: "it", code: "IT", name: "Italy", flag_url: "https://flagcdn.com/w40/it.png", status: "coming-soon" },
-  { key: "gr", code: "GR", name: "Greece", flag_url: "https://flagcdn.com/w40/gr.png", status: "coming-soon" },
-  { key: "pt", code: "PT", name: "Portugal", flag_url: "https://flagcdn.com/w40/pt.png", status: "coming-soon" },
-  { key: "cy", code: "CY", name: "Cyprus", flag_url: "https://flagcdn.com/w40/cy.png", status: "coming-soon" },
-  { key: "hr", code: "HR", name: "Croatia", flag_url: "https://flagcdn.com/w40/hr.png", status: "coming-soon" },
-  { key: "tr", code: "TR", name: "Turkey", flag_url: "https://flagcdn.com/w40/tr.png", status: "coming-soon" },
-  { key: "mt", code: "MT", name: "Malta", flag_url: "https://flagcdn.com/w40/mt.png", status: "coming-soon" },
+  { key: "gr", code: "GR", name: "Greece", flag_url: "https://flagcdn.com/w40/gr.png" },
+  { key: "it", code: "IT", name: "Italy", flag_url: "https://flagcdn.com/w40/it.png" },
+  { key: "mt", code: "MT", name: "Malta", flag_url: "https://flagcdn.com/w40/mt.png" },
+  { key: "pt", code: "PT", name: "Portugal", flag_url: "https://flagcdn.com/w40/pt.png" },
+  { key: "es", code: "ES", name: "Spain", flag_url: "https://flagcdn.com/w40/es.png" },
+  { key: "tr", code: "TR", name: "Turkey", flag_url: "https://flagcdn.com/w40/tr.png" },
 ];
 
 const HEADLINE_LIMIT_OPTIONS: HeadlineLimit[] = [30, 50, 100, 200];
@@ -447,22 +447,22 @@ function getFallbackSubdivisionsForRegion(regionKey: string): SubdivisionOption[
     return [
       { key: "all", code: "ALL", name: "All Mexico", flag_url: "https://flagcdn.com/w40/mx.png" },
       { key: "cdmx", code: "CDMX", name: "CDMX", flag_url: "https://flagcdn.com/w40/mx.png" },
+      { key: "edomex", code: "MEX", name: "Estado de México", flag_url: "https://flagcdn.com/w40/mx.png" },
       { key: "jalisco", code: "JAL", name: "Jalisco", flag_url: "https://flagcdn.com/w40/mx.png" },
       { key: "nuevo-leon", code: "NL", name: "Nuevo León", flag_url: "https://flagcdn.com/w40/mx.png" },
-      { key: "edomex", code: "MEX", name: "Estado de México", flag_url: "https://flagcdn.com/w40/mx.png" },
       { key: "yucatan", code: "YUC", name: "Yucatán", flag_url: "https://flagcdn.com/w40/mx.png" },
     ];
   }
   if (regionKey === "central-america") {
     return [
       { key: "all", code: "ALL", name: "All Central America", flag_url: "" },
-      { key: "gt", code: "GT", name: "Guatemala", flag_url: "https://flagcdn.com/w40/gt.png" },
+      { key: "bz", code: "BZ", name: "Belize", flag_url: "https://flagcdn.com/w40/bz.png" },
       { key: "cr", code: "CR", name: "Costa Rica", flag_url: "https://flagcdn.com/w40/cr.png" },
-      { key: "pa", code: "PA", name: "Panama", flag_url: "https://flagcdn.com/w40/pa.png" },
       { key: "sv", code: "SV", name: "El Salvador", flag_url: "https://flagcdn.com/w40/sv.png" },
+      { key: "gt", code: "GT", name: "Guatemala", flag_url: "https://flagcdn.com/w40/gt.png" },
       { key: "hn", code: "HN", name: "Honduras", flag_url: "https://flagcdn.com/w40/hn.png" },
       { key: "ni", code: "NI", name: "Nicaragua", flag_url: "https://flagcdn.com/w40/ni.png" },
-      { key: "bz", code: "BZ", name: "Belize", flag_url: "https://flagcdn.com/w40/bz.png" },
+      { key: "pa", code: "PA", name: "Panama", flag_url: "https://flagcdn.com/w40/pa.png" },
     ];
   }
   if (regionKey === "europe") return FALLBACK_EUROPE_SUBDIVISIONS;
