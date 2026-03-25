@@ -104,6 +104,7 @@ REGIONS: Dict[str, Dict[str, Any]] = {
             "nuevo-leon": {"code": "NL", "name": "Nuevo León", "flag_url": ""},
             "edomex": {"code": "MEX", "name": "Estado de México", "flag_url": ""},
             "yucatan": {"code": "YUC", "name": "Yucatán", "flag_url": ""},
+            "guanajuato": {"code": "GTO", "name": "Guanajuato", "flag_url": ""},
         },
     },
     "central-america": {
@@ -650,6 +651,33 @@ SOURCES: List[Dict[str, Any]] = [
         "country_flag_url": "https://flagcdn.com/w40/mx.png",
         "source_logo": "https://www.yucatan.com.mx/favicon.ico",
         "feed_url": "https://www.yucatan.com.mx/feed/",
+    },
+    # --- Guanajuato (GTO) ---
+    {
+        "id": "el_sol_del_bajio_gto",
+        "name": "El Sol del Bajío (Guanajuato)",
+        "region_key": "mexico",
+        "subdivision_key": "guanajuato",
+        "country_key": "guanajuato",
+        "subdivision_code": "GTO",
+        "country_code": "GTO",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://oem.com.mx/elsoldelbajio/favicon.ico",
+        "feed_url": "https://oem.com.mx/elsoldelbajio/rss",
+    },
+    {
+        "id": "am_leon_gto",
+        "name": "AM León (Guanajuato)",
+        "region_key": "mexico",
+        "subdivision_key": "guanajuato",
+        "country_key": "guanajuato",
+        "subdivision_code": "GTO",
+        "country_code": "GTO",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://www.am.com.mx/favicon.ico",
+        "feed_url": "https://www.am.com.mx/feed/",
     },
 
     # =====================================================================
@@ -4461,7 +4489,7 @@ def _worker_loop() -> None:
 
     subdivisions = _env_list("PRE_ENRICH_SUBDIVISIONS", "")
     if not subdivisions:
-        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,cl,co,pe,ec,ve,cdmx,jalisco,nuevo-leon,edomex,yucatan,gt,cr,sv,hn,ni,pa,bz,es,fr")
+        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,cl,co,pe,ec,ve,cdmx,jalisco,nuevo-leon,edomex,yucatan,guanajuato,gt,cr,sv,hn,ni,pa,bz,es,fr")
     if not subdivisions:
         subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all", "cdmx"]
 
