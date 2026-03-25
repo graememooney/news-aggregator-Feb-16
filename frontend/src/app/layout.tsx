@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   title: "Regional Pulse News",
   description: "Regional News, Translated for You. English-language news coverage from Latin America and Europe.",
   metadataBase: new URL("https://regionalpulsenews.com"),
+  verification: {
+    google: "YfnQP82JdSy9wAdS1EySEJbMjMj2y4tct8AJuDPNcVQ",
+  },
   manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Regional Pulse News",
