@@ -197,6 +197,19 @@ SOURCES: List[Dict[str, Any]] = [
         "source_logo": "https://brecha.com.uy/favicon.ico",
         "feed_url": "https://brecha.com.uy/feed/",
     },
+    {
+        "id": "ladiaria_uy",
+        "name": "La Diaria (UY)",
+        "region_key": "south-america",
+        "subdivision_key": "uy",
+        "country_key": "uy",
+        "subdivision_code": "UY",
+        "country_code": "UY",
+        "subdivision_flag_url": "https://flagcdn.com/w40/uy.png",
+        "country_flag_url": "https://flagcdn.com/w40/uy.png",
+        "source_logo": "https://ladiaria.com.uy/favicon.ico",
+        "feed_url": "https://ladiaria.com.uy/feeds/articulos/",
+    },
     # --- Argentina (AR) ---
     {
         "id": "lanacion_ar",
