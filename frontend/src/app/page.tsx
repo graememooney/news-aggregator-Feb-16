@@ -146,7 +146,10 @@ const CATEGORY_ORDER = [
   UNCATEGORIZED,
 ] as const;
 
-type CategoryFilter = "all" | (typeof CATEGORY_ORDER)[number];
+type CategorySingle = (typeof CATEGORY_ORDER)[number];
+type CategoryFilter = "all" | CategorySingle;
+/** Multi-select: empty set means "all" */
+type CategorySelection = Set<CategorySingle>;
 type EnrichStatus = "idle" | "loading" | "ok" | "error";
 type EnrichState = { status: EnrichStatus; message?: string };
 type LoadError = { message: string; status?: number } | null;
@@ -415,7 +418,7 @@ function buildShareableUrl(params: {
   region: RegionKey;
   subdivision: SubdivisionKey;
   range: string;
-  category: CategoryFilter;
+  categories: CategorySelection;
   headlineLimit: HeadlineLimit;
   query: string;
   defaultSubdivisionForRegion: string;
@@ -427,7 +430,7 @@ function buildShareableUrl(params: {
   if (params.region !== DEFAULT_REGION) sp.set("region", params.region);
   if (params.subdivision !== params.defaultSubdivisionForRegion) sp.set("subdivision", params.subdivision);
   if (params.range !== DEFAULT_RANGE) sp.set("range", params.range);
-  if (params.category !== DEFAULT_CATEGORY) sp.set("category", params.category);
+  if (params.categories.size > 0) sp.set("category", [...params.categories].join(","));
   if (params.headlineLimit !== DEFAULT_HEADLINE_LIMIT) sp.set("limit", String(params.headlineLimit));
 
   const trimmedQuery = params.query.trim();
@@ -512,7 +515,7 @@ export default function Home() {
   const [subdivision, setSubdivision] = useState<SubdivisionKey>(
     defaultSubdivisionForRegion(DEFAULT_REGION, FALLBACK_REGION_OPTIONS, FALLBACK_SOUTH_AMERICA_SUBDIVISIONS)
   );
-  const [category, setCategory] = useState<CategoryFilter>(DEFAULT_CATEGORY);
+  const [categories, setCategories] = useState<CategorySelection>(new Set());
   const [headlineLimit, setHeadlineLimit] = useState<HeadlineLimit>(DEFAULT_HEADLINE_LIMIT);
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const countryPickerRef = React.useRef<HTMLDivElement>(null);
@@ -764,10 +767,12 @@ export default function Home() {
   }, [region, regionOptionsForUi, subdivisionOptions]);
 
   useEffect(() => {
-    if (category !== "all" && !topicsInData.has(category)) {
-      setCategory("all");
+    if (categories.size > 0) {
+      const valid = new Set<CategorySingle>();
+      for (const c of categories) { if (topicsInData.has(c)) valid.add(c); }
+      if (valid.size !== categories.size) setCategories(valid);
     }
-  }, [topicsInData, category]);
+  }, [topicsInData, categories]);
 
   useEffect(() => {
     if (!subdivisionOptions.some((c) => c.key === subdivision)) {
@@ -899,13 +904,12 @@ export default function Home() {
     const fallbackSubdivisions = getFallbackSubdivisionsForRegion(nextRegion);
     const nextSubdivision = defaultSubdivisionForRegion(nextRegion, regionOptionsForUi, fallbackSubdivisions);
     const nextRange = DEFAULT_RANGE;
-    const nextCategory = DEFAULT_CATEGORY;
     const nextHeadlineLimit = DEFAULT_HEADLINE_LIMIT;
 
     setRegion(nextRegion);
     setSubdivision(nextSubdivision);
     setRange(nextRange);
-    setCategory(nextCategory);
+    setCategories(new Set());
     setHeadlineLimit(nextHeadlineLimit);
     setQuery("");
 
@@ -922,13 +926,12 @@ export default function Home() {
     }
 
     const nextRange = DEFAULT_RANGE;
-    const nextCategory = DEFAULT_CATEGORY;
     const nextHeadlineLimit = DEFAULT_HEADLINE_LIMIT;
     const nextQuery = "";
 
     setRegion(nextRegion);
     setRange(nextRange);
-    setCategory(nextCategory);
+    setCategories(new Set());
     setHeadlineLimit(nextHeadlineLimit);
     setQuery(nextQuery);
 
@@ -972,7 +975,7 @@ export default function Home() {
       region,
       subdivision,
       range,
-      category,
+      categories,
       headlineLimit,
       query,
       defaultSubdivisionForRegion: selectedRegionDefaultSubdivision,
@@ -1249,7 +1252,7 @@ export default function Home() {
     let savedRegion = DEFAULT_REGION;
     let savedSubdivision = "";
     let savedRange = DEFAULT_RANGE;
-    let savedCategory: CategoryFilter = DEFAULT_CATEGORY;
+    let savedCategories: CategorySelection = new Set();
     let savedHeadlineLimit: HeadlineLimit = DEFAULT_HEADLINE_LIMIT;
     let savedQuery = DEFAULT_QUERY;
 
@@ -1273,7 +1276,10 @@ export default function Home() {
       if (rangeRaw && isValidRange(rangeRaw)) savedRange = rangeRaw;
 
       const categoryRaw = window.localStorage.getItem(STORAGE_KEYS.category);
-      if (categoryRaw && isValidCategory(categoryRaw)) savedCategory = categoryRaw;
+      if (categoryRaw && categoryRaw !== "all") {
+        const parts = categoryRaw.split(",").filter((c) => isValidCategory(c) && c !== "all") as CategorySingle[];
+        if (parts.length > 0) savedCategories = new Set(parts);
+      }
 
       const headlineLimitRaw = window.localStorage.getItem(STORAGE_KEYS.headlineLimit);
       if (headlineLimitRaw && isValidHeadlineLimit(headlineLimitRaw)) {
@@ -1296,7 +1302,10 @@ export default function Home() {
       if (rangeParam && isValidRange(rangeParam)) savedRange = rangeParam;
 
       const categoryParam = sp.get("category");
-      if (categoryParam && isValidCategory(categoryParam)) savedCategory = categoryParam;
+      if (categoryParam && categoryParam !== "all") {
+        const parts = categoryParam.split(",").filter((c) => isValidCategory(c) && c !== "all") as CategorySingle[];
+        if (parts.length > 0) savedCategories = new Set(parts);
+      }
 
       const limitParam = sp.get("limit");
       if (limitParam && isValidHeadlineLimit(limitParam)) {
@@ -1335,7 +1344,7 @@ export default function Home() {
       setRegion(normalizedRegion);
       setSubdivision(normalizedSubdivision);
       setRange(savedRange);
-      setCategory(savedCategory);
+      setCategories(savedCategories);
       setHeadlineLimit(savedHeadlineLimit);
       setQuery(savedQuery);
       setPrefsReady(true);
@@ -1476,9 +1485,9 @@ export default function Home() {
   useEffect(() => {
     if (!prefsReady) return;
     try {
-      window.localStorage.setItem(STORAGE_KEYS.category, category);
+      window.localStorage.setItem(STORAGE_KEYS.category, categories.size > 0 ? [...categories].join(",") : "all");
     } catch {}
-  }, [category, prefsReady]);
+  }, [categories, prefsReady]);
 
   useEffect(() => {
     if (!prefsReady) return;
@@ -1494,7 +1503,7 @@ export default function Home() {
         region,
         subdivision,
         range,
-        category,
+        categories,
         headlineLimit,
         query,
         defaultSubdivisionForRegion: selectedRegionDefaultSubdivision,
@@ -1503,7 +1512,7 @@ export default function Home() {
         window.history.replaceState(null, "", nextUrl);
       }
     } catch {}
-  }, [region, subdivision, range, category, headlineLimit, query, prefsReady, selectedRegionDefaultSubdivision]);
+  }, [region, subdivision, range, categories, headlineLimit, query, prefsReady, selectedRegionDefaultSubdivision]);
 
   useEffect(() => {
     return () => {
@@ -1515,8 +1524,8 @@ export default function Home() {
   const filteredClusters = useMemo(() => {
     let list = clusters;
 
-    if (category !== "all") {
-      list = list.filter((c) => normalizeTopic(c.best_item.topic || c.topic) === category);
+    if (categories.size > 0) {
+      list = list.filter((c) => categories.has(normalizeTopic(c.best_item.topic || c.topic) as CategorySingle));
     }
 
     const normalizedQuery = query.trim().toLowerCase();
@@ -1527,13 +1536,13 @@ export default function Home() {
       const hay = [a.title_en, a.summary_en, a.source, c.topic].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(normalizedQuery);
     });
-  }, [clusters, query, category]);
+  }, [clusters, query, categories]);
 
   const hasActiveSearch = query.trim().length > 0;
   const hasNonDefaultRegion = region !== DEFAULT_REGION;
   const hasNonDefaultSubdivision = subdivision !== selectedRegionDefaultSubdivision;
   const hasNonDefaultRange = range !== DEFAULT_RANGE;
-  const hasNonDefaultCategory = category !== DEFAULT_CATEGORY;
+  const hasNonDefaultCategory = categories.size > 0;
   const hasNonDefaultLimit = headlineLimit !== DEFAULT_HEADLINE_LIMIT;
 
   const showFilterChips =
@@ -1858,7 +1867,7 @@ export default function Home() {
                 ) : null}
                 {hasNonDefaultCategory ? (
                   <span className="rounded-full border border-gray-300 px-3 py-1 dark:border-gray-700">
-                    Category: {category}
+                    {categories.size === 1 ? `Category: ${[...categories][0]}` : `Categories: ${[...categories].join(", ")}`}
                   </span>
                 ) : null}
                 {hasNonDefaultLimit ? (
@@ -1978,7 +1987,7 @@ export default function Home() {
                         <img src={BRAND_LOGO_PATH} alt="" className="h-10 w-10 rounded-xl shadow-sm" />
                         <div className="text-left">
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">Love Regional Pulse News?</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Subscribe to go ad-free and support this app</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Go ad-free, get a personal RSS feed, and support this app</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -2188,19 +2197,45 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as CategoryFilter)}
-                    className="h-11 w-full rounded-xl border border-gray-300 bg-white px-3 text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-                  >
-                    <option value="all">All categories</option>
-                    {categoryOptions.map((c) => (
-                      <option key={c} value={c} disabled={!topicsInData.has(c)}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Categories</label>
+                  <div className="max-h-56 overflow-y-auto rounded-xl border border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900">
+                    <label className="flex cursor-pointer items-center justify-between border-b border-gray-200 px-3 py-2.5 dark:border-gray-700">
+                      <span className={`text-sm ${categories.size === 0 ? "font-semibold text-black dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>All categories</span>
+                      <input
+                        type="checkbox"
+                        checked={categories.size === 0}
+                        onChange={() => setCategories(new Set())}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                      />
+                    </label>
+                    {categoryOptions.map((c) => {
+                      const inData = topicsInData.has(c);
+                      const isSelected = categories.has(c);
+                      return (
+                        <label
+                          key={c}
+                          className={`flex cursor-pointer items-center justify-between border-b border-gray-200 px-3 py-2.5 last:border-0 dark:border-gray-700 ${!inData ? "opacity-40" : ""}`}
+                        >
+                          <span className={`text-sm ${isSelected ? "font-semibold text-black dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>{c}</span>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            disabled={!inData}
+                            onChange={() => {
+                              const next = new Set(categories);
+                              if (isSelected) {
+                                next.delete(c);
+                              } else {
+                                next.add(c);
+                              }
+                              setCategories(next);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div>
@@ -2418,9 +2453,9 @@ export default function Home() {
             <div className="relative w-[calc(100vw-2rem)] max-w-md rounded-3xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-gray-700 dark:bg-black sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h3 className="text-xl font-semibold tracking-tight">Go Ad-Free</h3>
+                  <h3 className="text-xl font-semibold tracking-tight">Subscribe</h3>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    Support Regional Pulse News and enjoy a cleaner reading experience.
+                    Support Regional Pulse News and unlock subscriber perks.
                   </p>
                 </div>
                 <button
@@ -2431,6 +2466,21 @@ export default function Home() {
                   Close
                 </button>
               </div>
+
+              <ul className="mt-4 space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                <li className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4 shrink-0 text-green-500"><path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm3.844-8.791a.75.75 0 00-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 10-1.114 1.004l2.25 2.5a.75.75 0 001.152-.043l4.25-5.5z" clipRule="evenodd" /></svg>
+                  Ad-free reading experience
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4 shrink-0 text-green-500"><path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm3.844-8.791a.75.75 0 00-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 10-1.114 1.004l2.25 2.5a.75.75 0 001.152-.043l4.25-5.5z" clipRule="evenodd" /></svg>
+                  Personal RSS feed for your favourite reader app
+                </li>
+                <li className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4 shrink-0 text-green-500"><path fillRule="evenodd" d="M8 15A7 7 0 108 1a7 7 0 000 14zm3.844-8.791a.75.75 0 00-1.188-.918l-3.7 4.79-1.649-1.833a.75.75 0 10-1.114 1.004l2.25 2.5a.75.75 0 001.152-.043l4.25-5.5z" clipRule="evenodd" /></svg>
+                  Support independent regional journalism
+                </li>
+              </ul>
 
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
@@ -2612,7 +2662,7 @@ export default function Home() {
               onClick={() => setSubscribeOpen(true)}
               className="text-xs text-gray-400 underline underline-offset-2 transition hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400"
             >
-              Subscribe to go ad-free and support this app
+              Subscribe for ad-free reading, RSS feed, and more
             </button>
           ) : null}
         </div>
