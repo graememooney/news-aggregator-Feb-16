@@ -158,6 +158,19 @@ SOURCES: List[Dict[str, Any]] = [
         "source_logo": "https://www.elobservador.com.uy/favicon.ico",
         "feed_url": "https://www.elobservador.com.uy/rss/pages/home.xml",
     },
+    {
+        "id": "elpais_uy",
+        "name": "El País (UY)",
+        "region_key": "south-america",
+        "subdivision_key": "uy",
+        "country_key": "uy",
+        "subdivision_code": "UY",
+        "country_code": "UY",
+        "subdivision_flag_url": "https://flagcdn.com/w40/uy.png",
+        "country_flag_url": "https://flagcdn.com/w40/uy.png",
+        "source_logo": "https://www.elpais.com.uy/favicon.ico",
+        "feed_url": "https://www.elpais.com.uy/rss",
+    },
     # --- Argentina (AR) ---
     {
         "id": "lanacion_ar",
