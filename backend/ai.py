@@ -35,17 +35,14 @@ def _openai_client():
 
 
 def _venice_client():
-    """Venice client — OpenAI-compatible SDK with x-api-key header for inference keys."""
+    """Venice client — OpenAI-compatible SDK with Bearer auth."""
     if OpenAI is None:
         raise RuntimeError("openai package not installed. Add it to requirements.")
     if not settings.venice_api_key:
         raise RuntimeError("VENICE_API_KEY is not set.")
-    # Venice inference keys use x-api-key header, not Authorization Bearer
-    from openai._base_client import SyncHttpxClientWrapper
     return OpenAI(
         base_url=settings.venice_base_url,
-        api_key="venice-inference",  # dummy, real key via custom header
-        default_headers={"x-api-key": settings.venice_api_key},
+        api_key=settings.venice_api_key,  # SDK sends Authorization: Bearer automatically
     )
 
 
@@ -124,7 +121,16 @@ def translate_and_summarize(
     )
 
     content = resp.choices[0].message.content or ""
-    import json
+    import json, re
+
+    # Strip markdown code fences if present
+    content = content.strip()
+    if content.startswith("```"):
+        # Remove opening fence and optional language tag
+        content = re.sub(r"^```(?:\w+)?\n?", "", content)
+        # Remove closing fence
+        content = re.sub(r"\n?```$", "", content)
+        content = content.strip()
 
     try:
         data = json.loads(content)
