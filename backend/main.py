@@ -2065,12 +2065,18 @@ def _fetch_feed(feed_url: str, timeout_s: int = 12, custom_headers: Optional[Dic
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             raw = resp.read()
         
-        # Decompress if gzip-encoded
+        # Decompress if gzip or brotli encoded
         content_encoding = resp.headers.get('Content-Encoding', '')
         if 'gzip' in content_encoding or (len(raw) > 2 and raw[:2] == b'\x1f\x8b'):
             import gzip
             try:
                 raw = gzip.decompress(raw)
+            except Exception:
+                pass  # If decompression fails, try parsing as-is
+        elif 'br' in content_encoding:
+            try:
+                import brotli
+                raw = brotli.decompress(raw)
             except Exception:
                 pass  # If decompression fails, try parsing as-is
         
@@ -4874,7 +4880,7 @@ def _worker_loop() -> None:
     if not subdivisions:
         subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,cl,co,pe,ec,ve,cdmx,jalisco,nuevo-leon,edomex,yucatan,guanajuato,oaxaca,gt,cr,sv,hn,ni,pa,bz,es,fr")
     if not subdivisions:
-        subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all", "cdmx"]
+        subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all", "cdmx", "oaxaca"]
 
     scan_limit = _env_int("PRE_ENRICH_SCAN_LIMIT", _env_int("PRE_ENRICH_MAX_ITEMS_PER_RUN", 60))
     max_new_per_bucket = _env_int("PRE_ENRICH_MAX_NEW_PER_BUCKET", 15)
