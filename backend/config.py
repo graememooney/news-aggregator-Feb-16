@@ -19,9 +19,15 @@ def _env_str(name: str, default: str) -> str:
 
 
 class Settings(BaseModel):
-    # OpenAI
+    # OpenAI (legacy / fallback)
     openai_api_key: str = _env_str("OPENAI_API_KEY", "")
     openai_model: str = _env_str("OPENAI_MODEL", "gpt-4o-mini")
+
+    # Venice AI
+    venice_api_key: str = _env_str("VENICE_API_KEY", "")
+    venice_base_url: str = _env_str("VENICE_BASE_URL", "https://api.venice.ai/api/v1")
+    use_venice: bool = _env_str("USE_VENICE", "0").lower() in ("1", "true", "yes")
+    default_venice_model: str = _env_str("DEFAULT_VENICE_MODEL", "mistral-small-3-2-24b-instruct")
 
     # Worker controls
     worker_enabled: bool = _env_str("WORKER_ENABLED", "1") == "1"

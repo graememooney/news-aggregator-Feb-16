@@ -27,6 +27,8 @@ try:
 except Exception:
     pass
 
+from lang_mapping import get_lang_for_subdivision
+
 # ----------------------------
 # App
 # ----------------------------
@@ -2861,6 +2863,7 @@ def _build_article(source: Dict[str, Any], entry: Dict[str, Any]) -> Optional[Di
         "has_cached_summary": False,
         "source_categories": source_categories,
         "source_category_primary": source_category_primary,
+        "lang": get_lang_for_subdivision(source.get("subdivision_key") or source.get("country_key")),
     }
 
     cached = _get_cached_enrich(link)
@@ -3922,17 +3925,38 @@ def _cluster_rank_score_and_factors(cobj: Dict[str, Any], subdivision_context: s
 # ----------------------------
 # OpenAI client
 # ----------------------------
-def _get_openai_client():
-    api_key = (os.getenv("GRAEME_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GRAEME_OPENAI_API_KEY / OPENAI_API_KEY not set in backend environment.")
-
+# AI Client (OpenAI legacy or Venice AI)
+# ----------------------------
+def _get_ai_client(base_url: Optional[str] = None, api_key: Optional[str] = None):
+    """Get an OpenAI-compatible client. Defaults to Venice if USE_VENICE is set."""
     try:
         from openai import OpenAI  # type: ignore
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"OpenAI package not installed in backend venv: {e}")
 
-    return OpenAI(api_key=api_key)
+    # Venice mode: read from env
+    use_venice = (os.getenv("USE_VENICE") or "").strip().lower() in ("1", "true", "yes")
+    if base_url is None and api_key is None and use_venice:
+        base_url = (os.getenv("VENICE_BASE_URL") or "https://api.venice.ai/api/v1").strip()
+        api_key = (os.getenv("VENICE_API_KEY") or "").strip()
+        if not api_key:
+            raise HTTPException(status_code=500, detail="VENICE_API_KEY not set in backend environment.")
+        return OpenAI(base_url=base_url, api_key=api_key)
+
+    # Fallback to OpenAI
+    if base_url is None:
+        api_key = (api_key or os.getenv("GRAEME_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
+        if not api_key:
+            raise HTTPException(status_code=500, detail="GRAEME_OPENAI_API_KEY / OPENAI_API_KEY not set in backend environment.")
+        return OpenAI(api_key=api_key)
+
+    return OpenAI(base_url=base_url, api_key=api_key)
+
+
+# Legacy alias for backward compat
+def _get_openai_client(base_url: Optional[str] = None, api_key: Optional[str] = None):
+    """Backwards-compatible wrapper: returns Venice if enabled, else OpenAI."""
+    return _get_ai_client(base_url=base_url, api_key=api_key)
 
 
 # ----------------------------
@@ -4613,7 +4637,11 @@ def enrich_items(req: EnrichRequest, request: Request):
         return {"items": cached_out}
 
     client = _get_openai_client()
-    model = (os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip()
+    use_venice = (os.getenv("USE_VENICE") or "").strip().lower() in ("1", "true", "yes")
+    if use_venice:
+        model = (os.getenv("DEFAULT_VENICE_MODEL") or "mistral-small-3-2-24b-instruct").strip()
+    else:
+        model = (os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip()
 
     payload = []
     for it in to_do:
@@ -4631,7 +4659,7 @@ def enrich_items(req: EnrichRequest, request: Request):
     categories_str = ", ".join(VALID_CATEGORIES)
 
     system = (
-        "You translate Spanish/Portuguese news headlines into English, write a short English summary, "
+        "You translate news headlines into English, write a short English summary, "
         "and classify each article into exactly one category.\n"
         "Return STRICT JSON only.\n"
         "Output shape:\n"
@@ -4746,13 +4774,17 @@ def _enrich_internal_clusters(items: List[Dict[str, str]]) -> int:
         return 0
 
     client = _get_openai_client()
-    model = (os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip()
+    use_venice = (os.getenv("USE_VENICE") or "").strip().lower() in ("1", "true", "yes")
+    if use_venice:
+        model = (os.getenv("DEFAULT_VENICE_MODEL") or "mistral-small-3-2-24b-instruct").strip()
+    else:
+        model = (os.getenv("OPENAI_MODEL") or "gpt-4o-mini").strip()
 
     from ai import VALID_CATEGORIES
     categories_str = ", ".join(VALID_CATEGORIES)
 
     system = (
-        "You translate Spanish/Portuguese news headlines into English, write a short English summary, "
+        "You translate news headlines into English, write a short English summary, "
         "and classify each article into exactly one category.\n"
         "Return STRICT JSON only.\n"
         "Output shape:\n"
