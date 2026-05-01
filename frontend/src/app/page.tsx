@@ -1024,7 +1024,9 @@ export default function Home() {
     setCategories(new Set());
     setHeadlineLimit(nextHeadlineLimit);
     setQuery(nextQuery);
-    hasUserToggledSources.current = false; // Reset toggle tracking on region change
+    // Clear source filter when switching regions - let it repopulate for new region
+    setEnabledSources(new Set());
+    hasUserToggledSources.current = false;
 
     const nextSubdivisions = await fetchSubdivisionsForRegion(nextRegion);
     setSubdivisionsData(nextSubdivisions);
@@ -1032,7 +1034,8 @@ export default function Home() {
     const nextSubdivision = defaultSubdivisionForRegion(nextRegion, regionOptionsForUi, nextSubdivisions);
     setSubdivision(nextSubdivision);
 
-    await loadTopStories(nextRegion, nextRange, nextSubdivision, nextHeadlineLimit);
+    // Load stories immediately - no source filter until user toggles one
+    await loadTopStories(nextRegion, nextRange, nextSubdivision, nextHeadlineLimit, new Set());
   }
 
   function showShareFeedback(message: string) {

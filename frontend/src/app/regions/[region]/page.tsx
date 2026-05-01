@@ -37,9 +37,9 @@ const REGIONS: Record<string, RegionInfo> = {
   mexico: {
     name: "Mexico",
     description:
-      "English-language news from Mexico. Translated headlines and summaries from major Mexican newspapers and news outlets covering CDMX, Jalisco, Nuevo León, Estado de México, and Yucatán.",
-    countries: ["CDMX", "Estado de México", "Jalisco", "Nuevo León", "Yucatán"],
-    sourceCount: 14,
+      "English-language news from Mexico. Translated headlines and summaries from major Mexican newspapers and news outlets covering CDMX, Estado de México, Guanajuato, Jalisco, Nuevo León, Oaxaca, and Yucatán.",
+    countries: ["CDMX", "Estado de México", "Guanajuato", "Jalisco", "Nuevo León", "Oaxaca", "Yucatán"],
+    sourceCount: 16,
   },
   "central-america": {
     name: "Central America",

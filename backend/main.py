@@ -108,6 +108,7 @@ REGIONS: Dict[str, Dict[str, Any]] = {
             "edomex": {"code": "MEX", "name": "Estado de México", "flag_url": ""},
             "yucatan": {"code": "YUC", "name": "Yucatán", "flag_url": ""},
             "guanajuato": {"code": "GTO", "name": "Guanajuato", "flag_url": ""},
+            "oaxaca": {"code": "OAX", "name": "Oaxaca", "flag_url": ""},
         },
     },
     "central-america": {
@@ -761,6 +762,28 @@ SOURCES: List[Dict[str, Any]] = [
         "country_flag_url": "https://flagcdn.com/w40/mx.png",
         "source_logo": "https://www.am.com.mx/favicon.ico",
         "feed_url": "https://www.am.com.mx/feed/",
+    },
+    {
+        "id": "huatulco_digital_mx",
+        "name": "Huatulco Digital (Oaxaca)",
+        "region_key": "mexico",
+        "subdivision_key": "oaxaca",
+        "country_key": "oaxaca",
+        "subdivision_code": "OAX",
+        "country_code": "OAX",
+        "subdivision_flag_url": "https://flagcdn.com/w40/mx.png",
+        "country_flag_url": "https://flagcdn.com/w40/mx.png",
+        "source_logo": "https://huatulcodigital.com/wp-content/uploads/2025/11/cropped-LOGO-DIARIOS-ELECTRONICOS-scaled-1-32x32.png",
+        "feed_url": "https://huatulcodigital.com/feed/",
+        "request_headers": {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "es-MX,es;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "DNT": "1",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1",
+        },
     },
 
     # =====================================================================
@@ -2042,12 +2065,18 @@ def _fetch_feed(feed_url: str, timeout_s: int = 12, custom_headers: Optional[Dic
         with urllib.request.urlopen(req, timeout=timeout_s) as resp:
             raw = resp.read()
         
-        # Decompress if gzip-encoded
+        # Decompress if gzip or brotli encoded
         content_encoding = resp.headers.get('Content-Encoding', '')
         if 'gzip' in content_encoding or (len(raw) > 2 and raw[:2] == b'\x1f\x8b'):
             import gzip
             try:
                 raw = gzip.decompress(raw)
+            except Exception:
+                pass  # If decompression fails, try parsing as-is
+        elif 'br' in content_encoding:
+            try:
+                import brotli
+                raw = brotli.decompress(raw)
             except Exception:
                 pass  # If decompression fails, try parsing as-is
         
@@ -4849,9 +4878,9 @@ def _worker_loop() -> None:
 
     subdivisions = _env_list("PRE_ENRICH_SUBDIVISIONS", "")
     if not subdivisions:
-        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,cl,co,pe,ec,ve,cdmx,jalisco,nuevo-leon,edomex,yucatan,guanajuato,gt,cr,sv,hn,ni,pa,bz,es,fr")
+        subdivisions = _env_list("PRE_ENRICH_COUNTRIES", "uy,ar,br,py,bo,cl,co,pe,ec,ve,cdmx,jalisco,nuevo-leon,edomex,yucatan,guanajuato,oaxaca,gt,cr,sv,hn,ni,pa,bz,es,fr")
     if not subdivisions:
-        subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all", "cdmx"]
+        subdivisions = ["uy", "ar", "br", "py", "bo", "mp", "all", "cdmx", "oaxaca"]
 
     scan_limit = _env_int("PRE_ENRICH_SCAN_LIMIT", _env_int("PRE_ENRICH_MAX_ITEMS_PER_RUN", 60))
     max_new_per_bucket = _env_int("PRE_ENRICH_MAX_NEW_PER_BUCKET", 15)

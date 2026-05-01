@@ -81,7 +81,7 @@ export default function AboutPage() {
             Paraguay, Peru, Uruguay, Venezuela
           </li>
           <li>
-            <strong>Mexico:</strong> CDMX, Estado de México, Jalisco, Nuevo León, Yucatán
+            <strong>Mexico:</strong> CDMX, Estado de México, Guanajuato, Jalisco, Nuevo León, Oaxaca, Yucatán
           </li>
           <li>
             <strong>Central America:</strong> Belize, Costa Rica, El Salvador, Guatemala, Honduras,
