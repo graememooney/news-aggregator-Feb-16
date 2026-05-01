@@ -1970,10 +1970,9 @@ export default function Home() {
                 const isLive = regionOption.status === "live";
 
                 return (
-                  <button
+                  <a
                     key={regionOption.key}
-                    type="button"
-                    onClick={() => void selectRegionHomepage(regionOption.key)}
+                    href={`/regions/${regionOption.key}`}
                     className={`min-w-0 rounded-2xl border px-2 py-2 text-center shadow-sm transition sm:px-3 sm:py-2.5 ${
                       isSelected
                         ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-500/10"
@@ -2001,7 +2000,7 @@ export default function Home() {
                         {isLive ? "Live" : "Coming Soon"}
                       </span>
                     </div>
-                  </button>
+                  </a>
                 );
               })}
             </div>
