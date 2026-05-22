@@ -1994,7 +1994,7 @@ DEFAULT_UA = (
 # Stores only the fields we actually use from feedparser results to save memory.
 _FEED_CACHE: Dict[str, Dict[str, Any]] = {}
 _FEED_CACHE_LOCK = threading.Lock()
-_FEED_CACHE_MAX = int(os.getenv("FEED_CACHE_MAX", "60"))
+_FEED_CACHE_MAX = int(os.getenv("FEED_CACHE_MAX", "30"))
 
 def _feed_cache_ttl_s() -> int:
     try:
@@ -2105,7 +2105,7 @@ def _fetch_feed(feed_url: str, timeout_s: int = 12, custom_headers: Optional[Dic
                     items = sorted(_FEED_CACHE.items(), key=lambda kv: kv[1]["ts"])
                     for k, _v in items[:len(_FEED_CACHE) - _FEED_CACHE_MAX]:
                         _FEED_CACHE.pop(k, None)
-
+        gc.collect()
         return _SlimFeed(slim_data)
     except urllib.error.URLError as e:
         raise RuntimeError(f"URL error: {e}")
@@ -2416,9 +2416,9 @@ def _news_ttl_s() -> int:
 
 def _news_cache_max_keys() -> int:
     try:
-        return int((os.getenv("NEWS_CACHE_MAX_KEYS") or "40").strip())
+        return int((os.getenv("NEWS_CACHE_MAX_KEYS") or "20").strip())
     except Exception:
-        return 40
+        return 20
 
 
 def _news_cache_get(key: str) -> Optional[Tuple[Dict[str, Any], int]]:
@@ -3196,6 +3196,7 @@ def _cluster_items_v2(raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 }
             )
 
+    gc.collect()
     return clusters_out
 
 
@@ -4271,6 +4272,7 @@ def get_news(
     scan_cap = min(2000, max(200, lim * 10))
     items = _collect_items(region=r, subdivision=selected_subdivision, range=range, q=q, scan_cap=scan_cap)
     items = _dedupe(items)
+    gc.collect()
 
     for a in items:
         a["cluster_id"] = _sig(a)
@@ -4339,6 +4341,7 @@ def get_clusters(
         it["rank_factors"] = factors
 
     clusters = _cluster_items_v2(raw)
+    gc.collect()
 
     for cobj in clusters:
         cid = (cobj.get("cluster_id") or "").strip()
@@ -4451,6 +4454,7 @@ def get_top(
         it["rank_factors"] = factors
 
     clusters = _cluster_items_v2(raw)
+    gc.collect()
 
     for cobj in clusters:
         cid = (cobj.get("cluster_id") or "").strip()
@@ -4551,6 +4555,7 @@ def get_cluster_by_id(cluster_id: str):
                 it["rank_factors"] = factors
 
             clusters = _cluster_items_v2(raw)
+            gc.collect()
             for cobj in clusters:
                 if cobj.get("cluster_id") == cid:
                     best = cobj.get("best_item")
