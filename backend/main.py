@@ -2006,15 +2006,21 @@ def _feed_cache_ttl_s() -> int:
 def _slim_entry(entry: Any) -> Dict[str, Any]:
     """Extract only the fields _build_article / _parse_date / _extract_entry_categories use."""
     slim: Dict[str, Any] = {}
-    for key in ("title", "link", "summary", "description", "published", "updated",
+    for key in ("title", "link", "published", "updated",
                 "published_parsed", "updated_parsed", "category", "categories", "tags"):
         val = entry.get(key)
         if val is not None:
             slim[key] = val
-    # content is a list of dicts; only keep the first value
+    # summary/description: cap at 800 chars to prevent huge RSS entries from blowing memory
+    for key in ("summary", "description"):
+        val = entry.get(key)
+        if val:
+            slim[key] = str(val)[:800]
+    # content is a list of dicts; only keep the first value, capped at 800 chars
     content = entry.get("content")
     if isinstance(content, list) and content:
-        slim["content"] = [{"value": (content[0].get("value", "") if isinstance(content[0], dict) else "")}]
+        text = (content[0].get("value", "") if isinstance(content[0], dict) else "")
+        slim["content"] = [{"value": text[:800]}]
     return slim
 
 
@@ -2083,6 +2089,11 @@ def _fetch_feed(feed_url: str, timeout_s: int = 12, custom_headers: Optional[Dic
         parsed = feedparser.parse(raw)
         
         # Memory optimization: limit entries if requested
+        # Also enforce a global max of 50 entries per feed regardless of source config
+        entries = getattr(parsed, 'entries', None)
+        if entries and len(entries) > 50:
+            parsed.entries = parsed.entries[:50]
+        
         if max_entries is not None and hasattr(parsed, 'entries'):
             parsed.entries = parsed.entries[:max_entries]
         
@@ -4201,7 +4212,8 @@ def _collect_items(region: str, subdivision: str, range: str, q: str, scan_cap: 
             return (source, None)
 
     feed_results = []
-    with ThreadPoolExecutor(max_workers=min(_env_int("FEED_FETCH_MAX_WORKERS", 5), max(1, len(matched_sources)))) as pool:
+    # Reduce default workers from 5 to 2 to lower peak memory on 512Mi containers
+    with ThreadPoolExecutor(max_workers=min(_env_int("FEED_FETCH_MAX_WORKERS", 2), max(1, len(matched_sources)))) as pool:
         futures = {pool.submit(_fetch_source, s): s for s in matched_sources}
         for future in as_completed(futures):
             feed_results.append(future.result())
