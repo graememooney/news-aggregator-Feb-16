@@ -1994,7 +1994,7 @@ DEFAULT_UA = (
 # Stores only the fields we actually use from feedparser results to save memory.
 _FEED_CACHE: Dict[str, Dict[str, Any]] = {}
 _FEED_CACHE_LOCK = threading.Lock()
-_FEED_CACHE_MAX = int(os.getenv("FEED_CACHE_MAX", "60"))
+_FEED_CACHE_MAX = int(os.getenv("FEED_CACHE_MAX", "30"))
 
 def _feed_cache_ttl_s() -> int:
     try:
@@ -2006,15 +2006,21 @@ def _feed_cache_ttl_s() -> int:
 def _slim_entry(entry: Any) -> Dict[str, Any]:
     """Extract only the fields _build_article / _parse_date / _extract_entry_categories use."""
     slim: Dict[str, Any] = {}
-    for key in ("title", "link", "summary", "description", "published", "updated",
+    for key in ("title", "link", "published", "updated",
                 "published_parsed", "updated_parsed", "category", "categories", "tags"):
         val = entry.get(key)
         if val is not None:
             slim[key] = val
-    # content is a list of dicts; only keep the first value
+    # summary/description: cap at 800 chars to prevent huge RSS entries from blowing memory
+    for key in ("summary", "description"):
+        val = entry.get(key)
+        if val:
+            slim[key] = str(val)[:800]
+    # content is a list of dicts; only keep the first value, capped at 800 chars
     content = entry.get("content")
     if isinstance(content, list) and content:
-        slim["content"] = [{"value": (content[0].get("value", "") if isinstance(content[0], dict) else "")}]
+        text = (content[0].get("value", "") if isinstance(content[0], dict) else "")
+        slim["content"] = [{"value": text[:800]}]
     return slim
 
 
@@ -2083,6 +2089,11 @@ def _fetch_feed(feed_url: str, timeout_s: int = 12, custom_headers: Optional[Dic
         parsed = feedparser.parse(raw)
         
         # Memory optimization: limit entries if requested
+        # Also enforce a global max of 50 entries per feed regardless of source config
+        entries = getattr(parsed, 'entries', None)
+        if entries and len(entries) > 50:
+            parsed.entries = parsed.entries[:50]
+        
         if max_entries is not None and hasattr(parsed, 'entries'):
             parsed.entries = parsed.entries[:max_entries]
         
@@ -2105,7 +2116,7 @@ def _fetch_feed(feed_url: str, timeout_s: int = 12, custom_headers: Optional[Dic
                     items = sorted(_FEED_CACHE.items(), key=lambda kv: kv[1]["ts"])
                     for k, _v in items[:len(_FEED_CACHE) - _FEED_CACHE_MAX]:
                         _FEED_CACHE.pop(k, None)
-
+        gc.collect()
         return _SlimFeed(slim_data)
     except urllib.error.URLError as e:
         raise RuntimeError(f"URL error: {e}")
@@ -2416,9 +2427,9 @@ def _news_ttl_s() -> int:
 
 def _news_cache_max_keys() -> int:
     try:
-        return int((os.getenv("NEWS_CACHE_MAX_KEYS") or "40").strip())
+        return int((os.getenv("NEWS_CACHE_MAX_KEYS") or "20").strip())
     except Exception:
-        return 40
+        return 20
 
 
 def _news_cache_get(key: str) -> Optional[Tuple[Dict[str, Any], int]]:
@@ -3196,6 +3207,7 @@ def _cluster_items_v2(raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 }
             )
 
+    gc.collect()
     return clusters_out
 
 
@@ -4200,7 +4212,8 @@ def _collect_items(region: str, subdivision: str, range: str, q: str, scan_cap: 
             return (source, None)
 
     feed_results = []
-    with ThreadPoolExecutor(max_workers=min(_env_int("FEED_FETCH_MAX_WORKERS", 5), max(1, len(matched_sources)))) as pool:
+    # Reduce default workers from 5 to 2 to lower peak memory on 512Mi containers
+    with ThreadPoolExecutor(max_workers=min(_env_int("FEED_FETCH_MAX_WORKERS", 2), max(1, len(matched_sources)))) as pool:
         futures = {pool.submit(_fetch_source, s): s for s in matched_sources}
         for future in as_completed(futures):
             feed_results.append(future.result())
@@ -4271,6 +4284,7 @@ def get_news(
     scan_cap = min(2000, max(200, lim * 10))
     items = _collect_items(region=r, subdivision=selected_subdivision, range=range, q=q, scan_cap=scan_cap)
     items = _dedupe(items)
+    gc.collect()
 
     for a in items:
         a["cluster_id"] = _sig(a)
@@ -4339,6 +4353,7 @@ def get_clusters(
         it["rank_factors"] = factors
 
     clusters = _cluster_items_v2(raw)
+    gc.collect()
 
     for cobj in clusters:
         cid = (cobj.get("cluster_id") or "").strip()
@@ -4451,6 +4466,7 @@ def get_top(
         it["rank_factors"] = factors
 
     clusters = _cluster_items_v2(raw)
+    gc.collect()
 
     for cobj in clusters:
         cid = (cobj.get("cluster_id") or "").strip()
@@ -4551,6 +4567,7 @@ def get_cluster_by_id(cluster_id: str):
                 it["rank_factors"] = factors
 
             clusters = _cluster_items_v2(raw)
+            gc.collect()
             for cobj in clusters:
                 if cobj.get("cluster_id") == cid:
                     best = cobj.get("best_item")
